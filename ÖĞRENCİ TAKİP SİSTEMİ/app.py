@@ -222,7 +222,7 @@ if not st.session_state['giris_yapildi']:
         c_resim1, c_resim2, c_resim3 = st.columns([1, 2, 1])
         with c_resim2:
             try:
-                st.image("karikatur.png", use_container_width=True) 
+                st.image("karikatür.png", use_container_width=True) 
             except:
                 st.markdown("<div style='text-align: center; font-size: 60px;'>👑</div>", unsafe_allow_html=True)
                 
