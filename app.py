@@ -1046,13 +1046,16 @@ if not df.empty:
                                     if g_foto is not None:
                                         dosya_uzantisi = g_foto.name.split('.')[-1]
                                         temiz_ad = "".join([c for c in g_adi if c.isalpha() or c.isdigit() or c==' ']).rstrip().replace(" ", "_")
-                                        yeni_foto_ismi = f"guncel_{temiz_ad}_{secili_id}_{row['id']}.{dosya_uzantisi}"
+                                        
+                                        # ÇÖZÜM: Overwrite hatasını engellemek için anlık saat/saniye ekleniyor
+                                        zaman_etiketi = pd.Timestamp.now().strftime("%H%M%S")
+                                        yeni_foto_ismi = f"guncel_{temiz_ad}_{secili_id}_{row['id']}_{zaman_etiketi}.{dosya_uzantisi}"
                                         
                                         dosya_byte = g_foto.getvalue()
                                         supabase.storage.from_("kaynaklar").upload(
                                             file=dosya_byte,
                                             path=yeni_foto_ismi,
-                                            file_options={"content-type": g_foto.type, "upsert": "true"}
+                                            file_options={"content-type": g_foto.type} # upsert kuralını sildik
                                         )
                                         guncellenecek_veri["foto_yolu"] = yeni_foto_ismi
                                     
