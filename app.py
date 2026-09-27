@@ -1076,28 +1076,28 @@ if not df.empty:
                 st.info("Öğrenciye tanımlanmış kaynak bulunmuyor. Yukarıdaki butondan ekleyebilirsiniz.")
             else:
                 st.info("Henüz eklenmiş bir kaynak bulunmuyor.")
+    # --- 3. ÇALIŞMA PROGRAMI ---
     with tab3:
         st.markdown("### 📅 Haftalık Çalışma Programı")
 
         # --- 1. YENİ PROGRAM HAZIRLAMA (SADECE ADMİN GÖRÜR) ---
         if st.session_state['rol'] == "ADMIN":
-            with st.expander("➕ Yeni Program Hazırla / Düzenle", expanded=True):
+            with st.expander("➕ Yeni Program Hazırla", expanded=False):
                 st.info("💡 **İpucu:** Görevleri alt alta yazın (Örn: Mat 50 Soru). Sistem bunları otomatik olarak tıklanabilir kutucuklara dönüştürecektir.")
-                secili_hafta = st.text_input("Tarih Aralığı Girin:", value="06.07.2026 - 13.07.2026", key="h_input")
-                eski_p = program_getir(secili_id, secili_hafta)
+                secili_hafta = st.text_input("Tarih Aralığı Girin:", value="28.09.2026 - 05.10.2026", key="h_input")
                 
-                with st.form("program_form"):
+                with st.form("program_form", clear_on_submit=True):
                     c_g1, c_g2 = st.columns(2)
                     with c_g1:
-                        pazartesi = st.text_area("Pazartesi", value=eski_p[0] if eski_p else "")
-                        carsamba = st.text_area("Çarşamba", value=eski_p[2] if eski_p else "")
-                        cuma = st.text_area("Cuma", value=eski_p[4] if eski_p else "")
-                        pazar = st.text_area("Pazar", value=eski_p[6] if eski_p else "")
+                        pazartesi = st.text_area("Pazartesi")
+                        carsamba = st.text_area("Çarşamba")
+                        cuma = st.text_area("Cuma")
+                        pazar = st.text_area("Pazar")
                     with c_g2:
-                        sali = st.text_area("Salı", value=eski_p[1] if eski_p else "")
-                        persembe = st.text_area("Perşembe", value=eski_p[3] if eski_p else "")
-                        cumartesi = st.text_area("Cumartesi", value=eski_p[5] if eski_p else "")
-                        haftalik_not = st.text_area("Koçluk Notu", value=eski_p[7] if eski_p else "")
+                        sali = st.text_area("Salı")
+                        persembe = st.text_area("Perşembe")
+                        cumartesi = st.text_area("Cumartesi")
+                        haftalik_not = st.text_area("Koçluk Notu")
 
                     if st.form_submit_button("Programı Kaydet"):
                         program_kaydet(secili_id, secili_hafta, pazartesi, sali, carsamba, persembe, cuma, cumartesi, pazar, haftalik_not)
@@ -1113,7 +1113,7 @@ if not df.empty:
 
         if not df_haftalar.empty:
             for idx, row in df_haftalar.iterrows():
-                with st.expander(f"📂 {row['hafta_adi']} Programını İncele"):
+                with st.expander(f"📂 {row['hafta_adi']} Programını İncele", expanded=(idx==0)):
                     
                     # --- TİKLENEBİLİR GÖREV LİSTESİ (ETKİLEŞİMLİ ALAN) ---
                     gunler_db = [
@@ -1148,6 +1148,9 @@ if not df.empty:
                                         elif satir.startswith("[ ] "):
                                             is_checked = False
                                             gorev_metni = satir[4:]
+                                        else:
+                                            # Daha önce başına kutu konmamışsa boş kutu koy
+                                            gorev_metni = satir
                                             
                                         check = st.checkbox(gorev_metni, value=is_checked, key=f"chk_{row['id']}_{g_key}_{i}")
                                         yeni_satirlar.append(f"[X] {gorev_metni}" if check else f"[ ] {gorev_metni}")
@@ -1160,23 +1163,69 @@ if not df.empty:
                         if row.get('haftalik_not'):
                             st.info(f"💡 **Emir Hocanın Notu:** {row['haftalik_not']}")
                         
-                        if st.form_submit_button("✅ İlerlemeyi Kaydet (Tikleri Güncelle)"):
+                        if st.form_submit_button("✅ İlerlemeyi Kaydet (Tikleri Güncelle)", use_container_width=True):
                             guncel_prog_data = {
                                 "pazartesi": guncel_veriler['pazartesi'], "sali": guncel_veriler['sali'], 
                                 "carsamba": guncel_veriler['carsamba'], "persembe": guncel_veriler['persembe'], 
                                 "cuma": guncel_veriler['cuma'], "cumartesi": guncel_veriler['cumartesi'], "pazar": guncel_veriler['pazar']
                             }
                             supabase.table("calisma_programi").update(guncel_prog_data).eq("id", row['id']).execute()
-                            st.success("Görev ilerlemeleri kaydedildi!")
+                            st.success("Görev ilerlemeleri başarıyla kaydedildi!")
                             st.rerun()
 
                     st.divider()
 
-                    # --- PDF VE WHATSAPP İÇİN YENİ NESİL ALTIN SARISI TASARIM ---
+                    # --- YENİ EKLENEN KISIM: PROGRAMI GÜNCELLE VE SİL MENÜSÜ ---
+                    if st.session_state['rol'] == "ADMIN":
+                        with st.expander("✏️ Bu Programı Düzenle veya Sil", expanded=False):
+                            
+                            # DÜZENLEME FORMU
+                            st.markdown("##### Programı Düzenle")
+                            with st.form(key=f"prog_duzenle_form_{row['id']}"):
+                                col_p1, col_p2 = st.columns(2)
+                                with col_p1:
+                                    # [X] ve [ ] işaretlerini temizleyerek ekrana getirir ki düzenlemek kolay olsun
+                                    def temiz_getir(metin):
+                                        return str(metin).replace("[X] ", "").replace("[ ] ", "") if metin else ""
+                                        
+                                    d_pazartesi = st.text_area("Pazartesi", value=temiz_getir(row.get('pazartesi')))
+                                    d_carsamba = st.text_area("Çarşamba", value=temiz_getir(row.get('carsamba')))
+                                    d_cuma = st.text_area("Cuma", value=temiz_getir(row.get('cuma')))
+                                    d_pazar = st.text_area("Pazar", value=temiz_getir(row.get('pazar')))
+                                with col_p2:
+                                    d_sali = st.text_area("Salı", value=temiz_getir(row.get('sali')))
+                                    d_persembe = st.text_area("Perşembe", value=temiz_getir(row.get('persembe')))
+                                    d_cumartesi = st.text_area("Cumartesi", value=temiz_getir(row.get('cumartesi')))
+                                    d_not = st.text_area("Koçluk Notu", value=row.get('haftalik_not', ''))
+                                    
+                                if st.form_submit_button("Değişiklikleri Kaydet", use_container_width=True):
+                                    duzenli_prog_data = {
+                                        "pazartesi": d_pazartesi, "sali": d_sali, "carsamba": d_carsamba, 
+                                        "persembe": d_persembe, "cuma": d_cuma, "cumartesi": d_cumartesi, 
+                                        "pazar": d_pazar, "haftalik_not": d_not
+                                    }
+                                    supabase.table("calisma_programi").update(duzenli_prog_data).eq("id", row['id']).execute()
+                                    st.success("Program başarıyla güncellendi!")
+                                    st.rerun()
+                            
+                            st.markdown("---")
+                            # SİLME BÖLÜMÜ (GÜVENLİK ONAYLI)
+                            st.markdown("##### 🗑️ Programı Sil")
+                            silme_onay = st.checkbox("Bu programı tamamen silmek istediğime eminim.", key=f"sil_onay_{row['id']}")
+                            if st.button("Sil", key=f"btn_sil_{row['id']}", type="primary"):
+                                if silme_onay:
+                                    supabase.table("calisma_programi").delete().eq("id", row['id']).execute()
+                                    st.success("Program sistemden silindi.")
+                                    st.rerun()
+                                else:
+                                    st.error("Lütfen silmeden önce onay kutusunu işaretleyin.")
+
+                    st.divider()
+
+                    # --- PDF VE WHATSAPP TASARIMI (ESKİSİ GİBİ KORUNDU) ---
                     def wp_formatla(metin):
                         return str(metin).replace("[X] ", "✅ ").replace("[ ] ", "⬜ ") if metin else ""
                     
-                    # HTML İçin CSS ile kusursuz çizilmiş kutucuklar
                     def html_formatla(metin):
                         if not metin: return '<div style="color:#a8a29e; font-style:italic; font-family:\'Kalam\', cursive; font-size:14px; margin-top:5px;">Serbest Gün...</div>'
                         satirlar = str(metin).split('\n')
@@ -1201,7 +1250,6 @@ if not df.empty:
                     if tel_clean.startswith("0"): tel_clean = "90" + tel_clean[1:]
                     wp_url = f"https://wa.me/{tel_clean}?text={urllib.parse.quote(wp_text)}"
                     
-                    # --- KESİN TEK SAYFA MİLİMETRİK HTML TASARIMI ---
                     html_icerik = f"""
                     <!DOCTYPE html>
                     <html lang="tr">
@@ -1210,59 +1258,31 @@ if not df.empty:
                         <title>{secili_ogrenci['ad_soyad']} - {row['hafta_adi']}</title>
                         <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
                         <style>
-                            /* EKRAN (TARAYICI) GÖRÜNÜMÜ */
                             * {{ box-sizing: border-box; }}
                             body {{ background-color: #fcfbf8; font-family: 'Nunito', sans-serif; margin: 0; padding: 20px; color: #333; }}
                             .container {{ width: 100%; max-width: 1200px; margin: auto; background-color: #fff; padding: 20px; border-radius: 12px; border: 2px solid #d4af37; box-shadow: 0 5px 15px rgba(212, 175, 55, 0.1); display: flex; flex-direction: column; }}
-                            
                             .header {{ text-align: center; border-bottom: 2px solid #d4af37; padding-bottom: 10px; margin-bottom: 15px; }}
                             .header h1 {{ margin: 0; color: #b8860b; font-size: 24px; font-weight: 900; letter-spacing: 1px; }}
                             .header p {{ margin: 3px 0 0 0; font-size: 14px; font-weight: 800; color: #78716c; }}
-                            
                             .grid-container {{ display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 10px; }}
                             .gun-kutu {{ border: 1.5px dashed #c5a059; border-radius: 8px; padding: 8px; background-color: #fefcf8; overflow: hidden; }}
                             .gun-baslik {{ font-size: 15px; font-weight: 900; color: #b8860b; margin-bottom: 6px; border-bottom: 1px solid #f3e8d3; padding-bottom: 4px; }}
-                            
                             .task-list {{ list-style: none; padding: 0; margin: 0; }}
                             .task {{ display: flex; align-items: flex-start; margin-bottom: 4px; font-family: 'Kalam', cursive; font-size: 14px; color: #444; line-height: 1.2; }}
                             .task.done {{ text-decoration: line-through; color: #a8a29e; }}
-                            
                             .check-box {{ display: inline-block; width: 12px; height: 12px; border: 1.5px solid #d4af37; border-radius: 3px; text-align: center; line-height: 12px; font-size: 10px; margin-right: 6px; margin-top: 2px; flex-shrink: 0; font-family: sans-serif; }}
                             .check-box.checked {{ background-color: #d4af37; color: #fff; font-weight: bold; border-color: #d4af37; }}
                             .check-box.empty {{ background-color: #fff; }}
                             .check-box.bullet {{ border: none; background: transparent; color: #d4af37; font-size: 18px; line-height: 12px; margin-top: 0; }}
                             .task-text {{ flex: 1; }}
-                            
                             .not-kutu {{ border: 2px solid #b8860b; border-radius: 8px; padding: 8px; background-color: #fff9e6; overflow: hidden; }}
                             .not-metin {{ font-family: 'Kalam', cursive; font-size: 15px; color: #996515; white-space: pre-wrap; }}
-
-                            /* 🔴 KESİN TEK SAYFA PDF (PRINT) ZORLAMASI 🔴 */
                             @page {{ size: A4 landscape; margin: 0 !important; }}
                             @media print {{ 
-                                html, body {{ 
-                                    width: 297mm !important; 
-                                    height: 209mm !important; /* A4'ün fiziksel sınırları (taşmaları önlemek için 1mm kısaltıldı) */
-                                    margin: 0 !important; 
-                                    padding: 0 !important; 
-                                    overflow: hidden !important; 
-                                    -webkit-print-color-adjust: exact !important; 
-                                    print-color-adjust: exact !important; 
-                                    background-color: #fff !important;
-                                }}
-                                .container {{ 
-                                    width: 100% !important; 
-                                    height: 100% !important; 
-                                    border: none !important; 
-                                    box-shadow: none !important; 
-                                    padding: 8mm 10mm !important; /* Kağıdın içerisinden verilen güvenli kenar boşlukları */
-                                    margin: 0 !important; 
-                                }}
-                                .grid-container {{ 
-                                    height: calc(100% - 60px) !important; /* Başlık alanını hesaptan düşüp tam ekrana yayıyoruz */
-                                }}
-                                .gun-kutu, .not-kutu {{
-                                    height: 100% !important; 
-                                }}
+                                html, body {{ width: 297mm !important; height: 209mm !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; background-color: #fff !important; }}
+                                .container {{ width: 100% !important; height: 100% !important; border: none !important; box-shadow: none !important; padding: 8mm 10mm !important; margin: 0 !important; }}
+                                .grid-container {{ height: calc(100% - 60px) !important; }}
+                                .gun-kutu, .not-kutu {{ height: 100% !important; }}
                             }}
                         </style>
                     </head>
@@ -1275,7 +1295,6 @@ if not df.empty:
                             <div class="grid-container">
                     """
                     
-                    # 7 Gün ve 1 Not Kutusu = Tam 8 Kutu (4x2 Grid'e kusursuz oturur)
                     gunler_html = [
                         ("Pazartesi", html_formatla(row.get('pazartesi', ''))), ("Salı", html_formatla(row.get('sali', ''))), 
                         ("Çarşamba", html_formatla(row.get('carsamba', ''))), ("Perşembe", html_formatla(row.get('persembe', ''))), 
@@ -1291,7 +1310,6 @@ if not df.empty:
                         
                     html_icerik += '</div></div></body></html>'
                     
-                    # --- 3. BUTONLARIN GÖSTERİMİ (ADMİN VE ÖĞRENCİ AYRIMI) ---
                     if st.session_state['rol'] == "ADMIN":
                         col_btn1, col_btn2 = st.columns(2)
                         col_btn1.link_button("📲 WhatsApp'tan Gönder", wp_url, use_container_width=True)
