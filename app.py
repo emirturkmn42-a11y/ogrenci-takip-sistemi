@@ -1078,6 +1078,17 @@ if not df.empty:
                 st.info("Henüz eklenmiş bir kaynak bulunmuyor.")
     # --- 3. ÇALIŞMA PROGRAMI ---
     with tab3:
+        # SİSTEM ARAYÜZÜ (STREAMLİT) İÇİN UZUN YAZILARI ALT SATIRA KAYDIRMA DÜZELTMESİ
+        st.markdown("""
+            <style>
+            div[data-testid="stCheckbox"] label p {
+                white-space: normal !important;
+                word-break: break-word !important;
+                font-size: 14px;
+            }
+            </style>
+        """, unsafe_allow_html=True)
+        
         st.markdown("### 📅 Haftalık Çalışma Programı")
 
         # --- 1. YENİ PROGRAM HAZIRLAMA (SADECE ADMİN GÖRÜR) ---
@@ -1148,9 +1159,6 @@ if not df.empty:
                                         elif satir.startswith("[ ] "):
                                             is_checked = False
                                             gorev_metni = satir[4:]
-                                        else:
-                                            # Daha önce başına kutu konmamışsa boş kutu koy
-                                            gorev_metni = satir
                                             
                                         check = st.checkbox(gorev_metni, value=is_checked, key=f"chk_{row['id']}_{g_key}_{i}")
                                         yeni_satirlar.append(f"[X] {gorev_metni}" if check else f"[ ] {gorev_metni}")
@@ -1175,20 +1183,16 @@ if not df.empty:
 
                     st.divider()
 
-                    # --- YENİ EKLENEN KISIM: PROGRAMI GÜNCELLE VE SİL MENÜSÜ ---
+                    # --- PROGRAMI GÜNCELLE VE SİL MENÜSÜ ---
                     if st.session_state['rol'] == "ADMIN":
                         with st.expander("✏️ Bu Programı Düzenle veya Sil", expanded=False):
                             
-                            # DÜZENLEME FORMU
                             st.markdown("##### Programı Düzenle")
                             with st.form(key=f"prog_duzenle_form_{row['id']}"):
-                                
-                                # YENİ EKLENEN TARİH GÜNCELLEME ALANI
                                 d_hafta = st.text_input("Tarih Aralığı (Hafta Adı):", value=row.get('hafta_adi', ''))
                                 
                                 col_p1, col_p2 = st.columns(2)
                                 with col_p1:
-                                    # [X] ve [ ] işaretlerini temizleyerek ekrana getirir ki düzenlemek kolay olsun
                                     def temiz_getir(metin):
                                         return str(metin).replace("[X] ", "").replace("[ ] ", "") if metin else ""
                                         
@@ -1214,7 +1218,6 @@ if not df.empty:
                                     st.rerun()
                             
                             st.markdown("---")
-                            # SİLME BÖLÜMÜ (GÜVENLİK ONAYLI)
                             st.markdown("##### 🗑️ Programı Sil")
                             silme_onay = st.checkbox("Bu programı tamamen silmek istediğime eminim.", key=f"sil_onay_{row['id']}")
                             if st.button("Sil", key=f"btn_sil_{row['id']}", type="primary"):
@@ -1227,7 +1230,7 @@ if not df.empty:
 
                     st.divider()
 
-                    # --- PDF VE WHATSAPP TASARIMI (ESKİSİ GİBİ KORUNDU) ---
+                    # --- PDF VE WHATSAPP TASARIMI ---
                     def wp_formatla(metin):
                         return str(metin).replace("[X] ", "✅ ").replace("[ ] ", "⬜ ") if metin else ""
                     
@@ -1237,12 +1240,18 @@ if not df.empty:
                         html_liste = '<ul class="task-list">'
                         for satir in satirlar:
                             if satir.strip() == "": continue
+                            
+                            # Cümle başındaki sistem etiketlerini temizle
+                            temiz_satir = satir
+                            if satir.startswith("[X] "): temiz_satir = satir[4:]
+                            elif satir.startswith("[ ] "): temiz_satir = satir[4:]
+                            
+                            # Sistemde tamamlandı ([X]) olarak işaretlenmişse PDF'te tikli görünsün
                             if satir.startswith("[X] "):
-                                html_liste += f'<li class="task done"><span class="check-box checked">✔</span><span class="task-text">{satir[4:]}</span></li>'
-                            elif satir.startswith("[ ] "):
-                                html_liste += f'<li class="task"><span class="check-box empty"></span><span class="task-text">{satir[4:]}</span></li>'
+                                html_liste += f'<li class="task done"><span class="check-box checked">✔</span><span class="task-text">{temiz_satir}</span></li>'
+                            # BAŞINA İŞARET KONMAMIŞ YA DA BOŞ OLAN HER GÖREV İÇİN BOŞ KARE KUTU KOY 
                             else:
-                                html_liste += f'<li class="task"><span class="check-box bullet">•</span><span class="task-text">{satir}</span></li>'
+                                html_liste += f'<li class="task"><span class="check-box empty"></span><span class="task-text">{temiz_satir}</span></li>'
                         html_liste += '</ul>'
                         return html_liste
 
@@ -1255,6 +1264,7 @@ if not df.empty:
                     if tel_clean.startswith("0"): tel_clean = "90" + tel_clean[1:]
                     wp_url = f"https://wa.me/{tel_clean}?text={urllib.parse.quote(wp_text)}"
                     
+                    # ESNEYEBİLEN VE YAZILARI KESMEYEN KUSURSUZ 4x2 PDF IZGARASI
                     html_icerik = f"""
                     <!DOCTYPE html>
                     <html lang="tr">
@@ -1269,25 +1279,25 @@ if not df.empty:
                             .header {{ text-align: center; border-bottom: 2px solid #d4af37; padding-bottom: 10px; margin-bottom: 15px; }}
                             .header h1 {{ margin: 0; color: #b8860b; font-size: 24px; font-weight: 900; letter-spacing: 1px; }}
                             .header p {{ margin: 3px 0 0 0; font-size: 14px; font-weight: 800; color: #78716c; }}
-                            .grid-container {{ display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(2, 1fr); gap: 10px; }}
-                            .gun-kutu {{ border: 1.5px dashed #c5a059; border-radius: 8px; padding: 8px; background-color: #fefcf8; overflow: hidden; }}
+                            .grid-container {{ display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: auto auto; gap: 10px; align-items: stretch; }}
+                            .gun-kutu {{ border: 1.5px dashed #c5a059; border-radius: 8px; padding: 10px; background-color: #fefcf8; display: flex; flex-direction: column; }}
                             .gun-baslik {{ font-size: 15px; font-weight: 900; color: #b8860b; margin-bottom: 6px; border-bottom: 1px solid #f3e8d3; padding-bottom: 4px; }}
-                            .task-list {{ list-style: none; padding: 0; margin: 0; }}
-                            .task {{ display: flex; align-items: flex-start; margin-bottom: 4px; font-family: 'Kalam', cursive; font-size: 14px; color: #444; line-height: 1.2; }}
+                            .task-list {{ list-style: none; padding: 0; margin: 0; flex: 1; }}
+                            .task {{ display: flex; align-items: flex-start; margin-bottom: 5px; font-family: 'Kalam', cursive; font-size: 14px; color: #444; line-height: 1.3; }}
                             .task.done {{ text-decoration: line-through; color: #a8a29e; }}
-                            .check-box {{ display: inline-block; width: 12px; height: 12px; border: 1.5px solid #d4af37; border-radius: 3px; text-align: center; line-height: 12px; font-size: 10px; margin-right: 6px; margin-top: 2px; flex-shrink: 0; font-family: sans-serif; }}
+                            .check-box {{ display: inline-block; width: 14px; height: 14px; border: 1.5px solid #d4af37; border-radius: 3px; text-align: center; line-height: 14px; font-size: 10px; margin-right: 6px; margin-top: 2px; flex-shrink: 0; font-family: sans-serif; }}
                             .check-box.checked {{ background-color: #d4af37; color: #fff; font-weight: bold; border-color: #d4af37; }}
                             .check-box.empty {{ background-color: #fff; }}
-                            .check-box.bullet {{ border: none; background: transparent; color: #d4af37; font-size: 18px; line-height: 12px; margin-top: 0; }}
-                            .task-text {{ flex: 1; }}
-                            .not-kutu {{ border: 2px solid #b8860b; border-radius: 8px; padding: 8px; background-color: #fff9e6; overflow: hidden; }}
-                            .not-metin {{ font-family: 'Kalam', cursive; font-size: 15px; color: #996515; white-space: pre-wrap; }}
+                            .task-text {{ flex: 1; word-wrap: break-word; word-break: break-word; hyphens: auto; }}
+                            .not-kutu {{ border: 2px solid #b8860b; border-radius: 8px; padding: 10px; background-color: #fff9e6; display: flex; flex-direction: column; }}
+                            .not-metin {{ font-family: 'Kalam', cursive; font-size: 15px; color: #996515; white-space: pre-wrap; flex: 1; word-wrap: break-word; }}
+                            
                             @page {{ size: A4 landscape; margin: 0 !important; }}
                             @media print {{ 
-                                html, body {{ width: 297mm !important; height: 209mm !important; margin: 0 !important; padding: 0 !important; overflow: hidden !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; background-color: #fff !important; }}
-                                .container {{ width: 100% !important; height: 100% !important; border: none !important; box-shadow: none !important; padding: 8mm 10mm !important; margin: 0 !important; }}
-                                .grid-container {{ height: calc(100% - 60px) !important; }}
-                                .gun-kutu, .not-kutu {{ height: 100% !important; }}
+                                html, body {{ width: 297mm !important; height: auto !important; min-height: 209mm !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; background-color: #fff !important; }}
+                                .container {{ width: 100% !important; height: auto !important; min-height: 100% !important; border: none !important; box-shadow: none !important; padding: 8mm 10mm !important; margin: 0 !important; overflow: visible !important; }}
+                                .grid-container {{ height: auto !important; overflow: visible !important; }}
+                                .gun-kutu, .not-kutu {{ height: auto !important; min-height: 80mm !important; page-break-inside: avoid; }}
                             }}
                         </style>
                     </head>
@@ -1323,7 +1333,6 @@ if not df.empty:
                         st.download_button("📄 Programı PDF Olarak İndir", data=html_icerik, file_name=f"{row['hafta_adi']}_program.html", mime="text/html", use_container_width=True)
         else:
             st.info("Kayıtlı geçmiş hafta bulunmuyor.")
-
 # --- 3. ÖDEV TAKİBİ ---
     with tab4: 
         col_odev1, col_odev2 = st.columns([1, 2])
