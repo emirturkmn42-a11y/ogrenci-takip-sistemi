@@ -926,12 +926,6 @@ if not df.empty:
             hedef_degeri = secili_ogrenci.get('hedef_net', 80)
             if pd.isna(hedef_degeri) or hedef_degeri is None: hedef_degeri = 80
             st.write(f"🎯 **Hedef Toplam Net:** {int(hedef_degeri)}")
-
-
-
-    # --- 2. KAYNAK YÖNETİMİ ---
-    with tab2:
-        st.markdown("### 📚 Öğrencinin Kaynakları ve İlerleme Durumu")
         
         # --- 2. KAYNAK YÖNETİMİ ---
     with tab2:
