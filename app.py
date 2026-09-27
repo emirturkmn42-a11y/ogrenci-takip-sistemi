@@ -1182,6 +1182,10 @@ if not df.empty:
                             # DÜZENLEME FORMU
                             st.markdown("##### Programı Düzenle")
                             with st.form(key=f"prog_duzenle_form_{row['id']}"):
+                                
+                                # YENİ EKLENEN TARİH GÜNCELLEME ALANI
+                                d_hafta = st.text_input("Tarih Aralığı (Hafta Adı):", value=row.get('hafta_adi', ''))
+                                
                                 col_p1, col_p2 = st.columns(2)
                                 with col_p1:
                                     # [X] ve [ ] işaretlerini temizleyerek ekrana getirir ki düzenlemek kolay olsun
@@ -1200,6 +1204,7 @@ if not df.empty:
                                     
                                 if st.form_submit_button("Değişiklikleri Kaydet", use_container_width=True):
                                     duzenli_prog_data = {
+                                        "hafta_adi": d_hafta,
                                         "pazartesi": d_pazartesi, "sali": d_sali, "carsamba": d_carsamba, 
                                         "persembe": d_persembe, "cuma": d_cuma, "cumartesi": d_cumartesi, 
                                         "pazar": d_pazar, "haftalik_not": d_not
