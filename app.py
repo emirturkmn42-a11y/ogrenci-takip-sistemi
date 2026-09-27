@@ -893,19 +893,36 @@ if not df.empty:
     with tab1:
         col_foto, col_bilgi = st.columns([1, 2])
         with col_foto:
-            foto_yolu = f"ogrenci_fotolar/{secili_id}.jpg"
-            if os.path.exists(foto_yolu): st.image(Image.open(foto_yolu), use_container_width=True)
+            foto_isim = f"{secili_id}.jpg"
+            
+            # 1. Resim Supabase'de var mı kontrol et
+            mevcut_dosyalar = supabase.storage.from_("fotograflar").list()
+            dosya_var_mi = False
+            if mevcut_dosyalar:
+                dosya_var_mi = any(dosya['name'] == foto_isim for dosya in mevcut_dosyalar)
+            
+            # Varsa fotoğrafı getir ve göster
+            if dosya_var_mi:
+                foto_url = supabase.storage.from_("fotograflar").get_public_url(foto_isim)
+                st.image(foto_url, use_container_width=True)
+
+            # 2. Yeni fotoğraf yükleme (Geçici hafıza yerine Supabase'e yükler)
             yuklenen_foto = st.file_uploader("Fotoğraf Yükle", type=['jpg', 'png', 'jpeg'], key=f"foto_{secili_id}")
             if yuklenen_foto:
-                with open(foto_yolu, "wb") as f: f.write(yuklenen_foto.getbuffer())
+                dosya_byte = yuklenen_foto.getvalue()
+                supabase.storage.from_("fotograflar").upload(
+                    file=dosya_byte,
+                    path=foto_isim,
+                    file_options={"content-type": yuklenen_foto.type, "upsert": "true"}
+                )
                 st.rerun()
+
         with col_bilgi:
             st.write(f"### {secili_ogrenci['ad_soyad']}")
             st.write(f"📚 **Sınav Grubu:** {secili_ogrenci['sinav_turu']} | 🆔 **No:** {secili_ogrenci['ogrenci_no']}")
             st.write(f"📞 **Öğrenci Tel:** {secili_ogrenci['telefon']}")
             st.write(f"👨‍👩‍👦 **Veli:** {secili_ogrenci['veli_ad']} ({secili_ogrenci['veli_telefon']})")
             
-            # Sözlükte key yoksa veya null ise varsayılan 80 göster
             hedef_degeri = secili_ogrenci.get('hedef_net', 80)
             if pd.isna(hedef_degeri) or hedef_degeri is None: hedef_degeri = 80
             st.write(f"🎯 **Hedef Toplam Net:** {int(hedef_degeri)}")
@@ -915,12 +932,6 @@ if not df.empty:
     # --- 2. KAYNAK YÖNETİMİ ---
     with tab2:
         st.markdown("### 📚 Öğrencinin Kaynakları ve İlerleme Durumu")
-        
-        # --- FOTOĞRAFLAR İÇİN KLASÖR OLUŞTURMA ---
-        if not os.path.exists('kaynak_fotolari'):
-            os.makedirs('kaynak_fotolari')
-            
-        # (NOT: ALTER TABLE kısımları kaldırıldı. Supabase paneline manuel eklendiği için gerek yok.)
         
         # --- 1. YENİ KAYNAK EKLEME (SADECE ADMİN GÖRÜR) ---
         if st.session_state['rol'] == "ADMIN":
@@ -937,15 +948,20 @@ if not df.empty:
                     
                     if st.form_submit_button("Kaynağı Kaydet"):
                         if k_adi:
-                            # Fotoğraf İşlemi
+                            # Fotoğraf İşlemi (Supabase Storage'a Yükleme)
                             foto_ismi = ""
                             if k_foto is not None:
                                 dosya_uzantisi = k_foto.name.split('.')[-1]
                                 temiz_ad = "".join([c for c in k_adi if c.isalpha() or c.isdigit() or c==' ']).rstrip().replace(" ", "_")
                                 foto_ismi = f"{temiz_ad}_{secili_id}.{dosya_uzantisi}"
-                                kayit_yolu = os.path.join("kaynak_fotolari", foto_ismi)
-                                with open(kayit_yolu, "wb") as f:
-                                    f.write(k_foto.getbuffer())
+                                
+                                # Dosyayı Supabase'e yükle
+                                dosya_byte = k_foto.getvalue()
+                                supabase.storage.from_("kaynaklar").upload(
+                                    file=dosya_byte,
+                                    path=foto_ismi,
+                                    file_options={"content-type": k_foto.type, "upsert": "true"}
+                                )
                                     
                             # Supabase'e Kaydet
                             yeni_kaynak_data = {
@@ -976,9 +992,17 @@ if not df.empty:
                     c1, c2, c3, c4 = st.columns([1.2, 3, 3, 2.5], vertical_alignment="center")
                     
                     with c1:
-                        # Sarı hata veren use_column_width düzeltildi -> use_container_width
-                        if row.get('foto_yolu') and os.path.exists(os.path.join("kaynak_fotolari", row['foto_yolu'])):
-                            st.image(os.path.join("kaynak_fotolari", row['foto_yolu']), use_container_width=True)
+                        # Supabase'den Fotoğrafı Çekme
+                        if row.get('foto_yolu'):
+                            # Dosyanın storage'da olup olmadığını kontrol et
+                            mevcut_dosyalar = supabase.storage.from_("kaynaklar").list()
+                            dosya_var_mi = any(dosya['name'] == row['foto_yolu'] for dosya in mevcut_dosyalar) if mevcut_dosyalar else False
+                            
+                            if dosya_var_mi:
+                                foto_url = supabase.storage.from_("kaynaklar").get_public_url(row['foto_yolu'])
+                                st.image(foto_url, use_container_width=True)
+                            else:
+                                st.markdown("<div style='text-align: center; font-size: 40px; padding: 10px; border: 1px dashed #e2e8f0; border-radius: 8px; color: #cbd5e1;'>📘</div>", unsafe_allow_html=True)
                         else:
                             st.markdown("<div style='text-align: center; font-size: 40px; padding: 10px; border: 1px dashed #e2e8f0; border-radius: 8px; color: #cbd5e1;'>📘</div>", unsafe_allow_html=True)
                             
@@ -1007,7 +1031,6 @@ if not df.empty:
                 st.info("Öğrenciye tanımlanmış kaynak bulunmuyor. Yukarıdaki butondan ekleyebilirsiniz.")
             else:
                 st.info("Henüz eklenmiş bir kaynak bulunmuyor.")
-
     with tab3:
         st.markdown("### 📅 Haftalık Çalışma Programı")
 
