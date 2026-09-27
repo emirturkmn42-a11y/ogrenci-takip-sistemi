@@ -987,14 +987,12 @@ if not df.empty:
                 m_sayfa = row.get('mevcut_sayfa', 0) or 0
                 yuzde = min((m_sayfa / t_sayfa) * 100, 100.0) 
                     
-                # Kart tasarımı için border=True kullanıyoruz ve dikeyde ortalıyoruz
+                # Kart tasarımı için border=True kullanıyoruz
                 with st.container(border=True):
                     c1, c2, c3, c4 = st.columns([1.2, 3, 3, 2.5], vertical_alignment="center")
                     
                     with c1:
-                        # Supabase'den Fotoğrafı Çekme
                         if row.get('foto_yolu'):
-                            # Dosyanın storage'da olup olmadığını kontrol et
                             mevcut_dosyalar = supabase.storage.from_("kaynaklar").list()
                             dosya_var_mi = any(dosya['name'] == row['foto_yolu'] for dosya in mevcut_dosyalar) if mevcut_dosyalar else False
                             
@@ -1011,7 +1009,6 @@ if not df.empty:
                         st.caption(f"**{row['ders']}** | {row['yayin_evi']}")
                              
                     with c3:
-                        # %100 olduysa bar yerine kutlama mesajı gösterir
                         if yuzde == 100:
                             st.success("🎉 **KAYNAK BİTTİ**")
                         else:
@@ -1021,11 +1018,48 @@ if not df.empty:
 
                     with c4:
                         if st.session_state['rol'] == "ADMIN":
-                            # Sayfa sayısını artırma alanı
                             yeni_sayfa = st.number_input("Sayfa Güncelle:", min_value=0, max_value=int(t_sayfa), value=int(m_sayfa), key=f"sayfa_{row['id']}")
                             if st.button("Kaydet", key=f"btn_k_{row['id']}", use_container_width=True, type="primary"):
                                 supabase.table("ogrenci_kaynaklari").update({"mevcut_sayfa": int(yeni_sayfa)}).eq("id", row['id']).execute()
                                 st.rerun()
+
+                    # YENİ EKLENEN KISIM: KAYNAK DÜZENLEME MENÜSÜ
+                    if st.session_state['rol'] == "ADMIN":
+                        with st.expander("✏️ Kaynağı Düzenle", expanded=False):
+                            with st.form(key=f"duzenle_form_{row['id']}", clear_on_submit=True):
+                                col_d1, col_d2 = st.columns(2)
+                                with col_d1:
+                                    g_adi = st.text_input("Kaynak Adı:", value=row['kaynak_adi'])
+                                    g_yayin = st.text_input("Yayın Evi:", value=row['yayin_evi'])
+                                with col_d2:
+                                    g_toplam = st.number_input("Toplam Sayfa:", min_value=1, value=int(t_sayfa))
+                                    g_foto = st.file_uploader("Yeni Fotoğraf (Değiştirmek istemiyorsanız boş bırakın):", type=['png', 'jpg', 'jpeg'], key=f"yeni_foto_{row['id']}")
+                                
+                                if st.form_submit_button("Değişiklikleri Kaydet"):
+                                    guncellenecek_veri = {
+                                        "kaynak_adi": g_adi,
+                                        "yayin_evi": g_yayin,
+                                        "toplam_sayfa": g_toplam
+                                    }
+                                    
+                                    # Eğer yeni bir fotoğraf yüklendiyse Supabase'e gönder ve yolu güncelle
+                                    if g_foto is not None:
+                                        dosya_uzantisi = g_foto.name.split('.')[-1]
+                                        temiz_ad = "".join([c for c in g_adi if c.isalpha() or c.isdigit() or c==' ']).rstrip().replace(" ", "_")
+                                        yeni_foto_ismi = f"guncel_{temiz_ad}_{secili_id}_{row['id']}.{dosya_uzantisi}"
+                                        
+                                        dosya_byte = g_foto.getvalue()
+                                        supabase.storage.from_("kaynaklar").upload(
+                                            file=dosya_byte,
+                                            path=yeni_foto_ismi,
+                                            file_options={"content-type": g_foto.type, "upsert": "true"}
+                                        )
+                                        guncellenecek_veri["foto_yolu"] = yeni_foto_ismi
+                                    
+                                    # Veritabanında güncelleme işlemini yap
+                                    supabase.table("ogrenci_kaynaklari").update(guncellenecek_veri).eq("id", row['id']).execute()
+                                    st.success("Kaynak başarıyla güncellendi!")
+                                    st.rerun()
         else:
             if st.session_state['rol'] == "ADMIN":
                 st.info("Öğrenciye tanımlanmış kaynak bulunmuyor. Yukarıdaki butondan ekleyebilirsiniz.")
