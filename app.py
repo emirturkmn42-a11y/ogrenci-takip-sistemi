@@ -933,6 +933,10 @@ if not df.empty:
     with tab2:
         st.markdown("### 📚 Öğrencinin Kaynakları ve İlerleme Durumu")
         
+        # --- 2. KAYNAK YÖNETİMİ ---
+    with tab2:
+        st.markdown("### 📚 Öğrencinin Kaynakları ve İlerleme Durumu")
+        
         # --- 1. YENİ KAYNAK EKLEME (SADECE ADMİN GÖRÜR) ---
         if st.session_state['rol'] == "ADMIN":
             with st.expander("➕ Yeni Kaynak / Soru Bankası Ekle", expanded=False):
@@ -955,13 +959,17 @@ if not df.empty:
                                 temiz_ad = "".join([c for c in k_adi if c.isalpha() or c.isdigit() or c==' ']).rstrip().replace(" ", "_")
                                 foto_ismi = f"{temiz_ad}_{secili_id}.{dosya_uzantisi}"
                                 
-                                # Dosyayı Supabase'e yükle
+                                # Dosyayı Supabase'e yükle (Hata Yakalayıcı ile)
                                 dosya_byte = k_foto.getvalue()
-                                supabase.storage.from_("kaynaklar").upload(
-                                    file=dosya_byte,
-                                    path=foto_ismi,
-                                    file_options={"content-type": k_foto.type, "upsert": "true"}
-                                )
+                                try:
+                                    supabase.storage.from_("kaynaklar").upload(
+                                        file=dosya_byte,
+                                        path=foto_ismi,
+                                        file_options={"content-type": k_foto.type, "upsert": "true"}
+                                    )
+                                except Exception as e:
+                                    st.error(f"Fotoğraf yüklenirken Supabase Hatası: {str(e)}")
+                                    st.stop()
                                     
                             # Supabase'e Kaydet
                             yeni_kaynak_data = {
@@ -1052,12 +1060,18 @@ if not df.empty:
                                         yeni_foto_ismi = f"guncel_{temiz_ad}_{secili_id}_{row['id']}_{zaman_etiketi}.{dosya_uzantisi}"
                                         
                                         dosya_byte = g_foto.getvalue()
-                                        supabase.storage.from_("kaynaklar").upload(
-                                            file=dosya_byte,
-                                            path=yeni_foto_ismi,
-                                            file_options={"content-type": g_foto.type} # upsert kuralını sildik
-                                        )
-                                        guncellenecek_veri["foto_yolu"] = yeni_foto_ismi
+                                        
+                                        # HATA YAKALAYICI (Asıl sorunu ekranda gösterecek)
+                                        try:
+                                            supabase.storage.from_("kaynaklar").upload(
+                                                file=dosya_byte,
+                                                path=yeni_foto_ismi,
+                                                file_options={"content-type": g_foto.type}
+                                            )
+                                            guncellenecek_veri["foto_yolu"] = yeni_foto_ismi
+                                        except Exception as e:
+                                            st.error(f"Supabase Yükleme Hatası: {str(e)}")
+                                            st.stop() # Hatayı ekranda dondurur ki okuyabilelim
                                     
                                     # Veritabanında güncelleme işlemini yap
                                     supabase.table("ogrenci_kaynaklari").update(guncellenecek_veri).eq("id", row['id']).execute()
