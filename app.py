@@ -950,8 +950,9 @@ if not df.empty:
                             foto_ismi = ""
                             if k_foto is not None:
                                 dosya_uzantisi = k_foto.name.split('.')[-1]
-                                temiz_ad = "".join([c for c in k_adi if c.isalpha() or c.isdigit() or c==' ']).rstrip().replace(" ", "_")
-                                foto_ismi = f"{temiz_ad}_{secili_id}.{dosya_uzantisi}"
+                                # ÇÖZÜM: Türkçe karakter hatasını engellemek için kitap adını dosya isminden çıkardık.
+                                zaman_etiketi = pd.Timestamp.now().strftime("%H%M%S")
+                                foto_ismi = f"yeni_kaynak_{secili_id}_{zaman_etiketi}.{dosya_uzantisi}"
                                 
                                 # Dosyayı Supabase'e yükle (Hata Yakalayıcı ile)
                                 dosya_byte = k_foto.getvalue()
@@ -1047,15 +1048,14 @@ if not df.empty:
                                     # Eğer yeni bir fotoğraf yüklendiyse Supabase'e gönder ve yolu güncelle
                                     if g_foto is not None:
                                         dosya_uzantisi = g_foto.name.split('.')[-1]
-                                        temiz_ad = "".join([c for c in g_adi if c.isalpha() or c.isdigit() or c==' ']).rstrip().replace(" ", "_")
                                         
-                                        # ÇÖZÜM: Overwrite hatasını engellemek için anlık saat/saniye ekleniyor
+                                        # ÇÖZÜM: Türkçe karakter hatasını engellemek için sadece ID'ler ve saat kullanılıyor.
                                         zaman_etiketi = pd.Timestamp.now().strftime("%H%M%S")
-                                        yeni_foto_ismi = f"guncel_{temiz_ad}_{secili_id}_{row['id']}_{zaman_etiketi}.{dosya_uzantisi}"
+                                        yeni_foto_ismi = f"guncel_kaynak_{secili_id}_{row['id']}_{zaman_etiketi}.{dosya_uzantisi}"
                                         
                                         dosya_byte = g_foto.getvalue()
                                         
-                                        # HATA YAKALAYICI (Asıl sorunu ekranda gösterecek)
+                                        # HATA YAKALAYICI
                                         try:
                                             supabase.storage.from_("kaynaklar").upload(
                                                 file=dosya_byte,
@@ -1065,7 +1065,7 @@ if not df.empty:
                                             guncellenecek_veri["foto_yolu"] = yeni_foto_ismi
                                         except Exception as e:
                                             st.error(f"Supabase Yükleme Hatası: {str(e)}")
-                                            st.stop() # Hatayı ekranda dondurur ki okuyabilelim
+                                            st.stop()
                                     
                                     # Veritabanında güncelleme işlemini yap
                                     supabase.table("ogrenci_kaynaklari").update(guncellenecek_veri).eq("id", row['id']).execute()
