@@ -753,7 +753,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# 2. Sayaç Sütunları
+# 2. Sayaç Sütunları (4'lü Sabit Yapı - HİÇ BOZULMADI)
 col_sayac1, col_sayac2, col_sayac3, col_sayac4 = st.columns(4)
 
 with col_sayac1:
@@ -784,49 +784,25 @@ with col_sayac3:
     </div>
     """, unsafe_allow_html=True)
 
-# 4. Kutu: Canlı Akan Saat ve Saniye (Diğerleriyle Birebir Aynı Boyutta)
+# 4. Kutu: Canlı Akan Saat ve Saniye
 with col_sayac4:
     components.html("""
     <style>
-        body {
-            margin: 0;
-            background-color: transparent;
-        }
+        body { margin: 0; background-color: transparent; }
         .sayac-kutu {
-            background: #ffffff;
-            border-radius: 12px;
-            padding: 16px;
-            text-align: center;
-            border: 1px solid #e2e8f0;
-            border-top: 4px solid #c5a059;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            font-family: sans-serif;
-            box-sizing: border-box;
+            background: #ffffff; border-radius: 12px; padding: 16px; text-align: center;
+            border: 1px solid #e2e8f0; border-top: 4px solid #c5a059;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05); font-family: sans-serif; box-sizing: border-box;
         }
-        .sayac-baslik {
-            font-size: 13px;
-            font-weight: 700;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .sayac-sayi {
-            font-size: 22px;
-            font-weight: 800;
-            color: #1e293b;
-            margin: 6px 0;
-        }
-        .sayac-alt {
-            font-size: 12px;
-            color: #94a3b8;
-        }
+        .sayac-baslik { font-size: 13px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+        .sayac-sayi { font-size: 22px; font-weight: 800; color: #1e293b; margin: 6px 0; }
+        .sayac-alt { font-size: 12px; color: #94a3b8; }
     </style>
     <div class="sayac-kutu">
         <div class="sayac-baslik">🕒 ANLIK SAAT</div>
         <div id="canli-saat" class="sayac-sayi">00:00:00</div>
         <div class="sayac-alt">AKTARIM AKTİF</div>
     </div>
-
     <script>
         function saatGuncelle() {
             const simdi = new Date();
@@ -840,7 +816,36 @@ with col_sayac4:
     </script>
     """, height=128)
 
-st.markdown("<br>", unsafe_allow_html=True)
+# --- YENİ NESİL ÖSYM HABER BANDI ---
+# Diğer sınavların tarihleri (Tahmini tarihlerdir, istediğin gibi değiştirebilirsin)
+import datetime
+diger_sinavlar = {
+    "MSÜ": datetime.date(2027, 3, 28),
+    "YDS/1": datetime.date(2027, 4, 18),
+    "ALES/1": datetime.date(2027, 4, 25),
+    "DGS": datetime.date(2027, 6, 30),
+    "KPSS Lisans": datetime.date(2027, 7, 18)
+}
+
+ticker_metni = ""
+for s_adi, s_tarih in diger_sinavlar.items():
+    k_gun = (s_tarih - bugun).days
+    if k_gun > 0:
+        ticker_metni += f"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 📌 <b>{s_adi}:</b> <span style='color:#d4af37;'>{k_gun} GÜN</span>"
+
+if ticker_metni:
+    st.markdown(f"""
+    <div style="background-color: #1e293b; border-radius: 8px; padding: 10px 15px; margin-top: 5px; margin-bottom: 25px; display: flex; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 1px solid #334155;">
+        <div style="background-color: #c5a059; color: #fff; padding: 5px 12px; border-radius: 6px; font-weight: 800; font-size: 13px; letter-spacing: 0.5px; margin-right: 15px; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+            📢 ÖSYM TAKVİMİ
+        </div>
+        <marquee scrollamount="6" scrolldelay="40" style="color: #f8fafc; font-family: sans-serif; font-size: 15px; font-weight: 500;">
+            {ticker_metni}
+        </marquee>
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    st.markdown("<br>", unsafe_allow_html=True)
 # --- 6. ANA EKRAN VE PROFİL PANELİ ---
 # 1. BULUTTAN ÖĞRENCİ LİSTESİNİ ÇEK (Çoklu Öğretmen Filtresiyle)
 if st.session_state['rol'] == "ADMIN":
