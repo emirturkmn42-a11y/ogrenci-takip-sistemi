@@ -817,22 +817,22 @@ with col_sayac4:
     """, height=128)
 
 # --- YENİ NESİL ÖSYM HABER BANDI ---
-# Diğer tüm sınavların tarihleri (ÖSYM takvimine göre bu tarihleri istediğin zaman değiştirebilirsin)
 import datetime
+
+# ÖSYM 2026/2027 Resmi Sınav Takvimi
 diger_sinavlar = {
+    "KPSS Önlisans": datetime.date(2026, 10, 4),
+    "KPSS Ortaöğretim": datetime.date(2026, 10, 25),
+    "KPSS DHBT": datetime.date(2026, 11, 1),
+    "ALES/3": datetime.date(2026, 11, 22),
     "YÖKDİL/1": datetime.date(2027, 2, 28),
     "MSÜ": datetime.date(2027, 3, 28),
     "YDS/1": datetime.date(2027, 4, 18),
     "ALES/1": datetime.date(2027, 4, 25),
     "DGS": datetime.date(2027, 6, 30),
     "KPSS Lisans (GY-GK)": datetime.date(2027, 7, 18),
-    "KPSS Eğitim Bilimleri": datetime.date(2027, 7, 18),
     "KPSS Alan Bilgisi": datetime.date(2027, 7, 24),
-    "KPSS ÖABT": datetime.date(2027, 8, 1),
-    "ALES/2": datetime.date(2027, 8, 22),
-    "KPSS Önlisans": datetime.date(2028, 9, 10),    # Çift yıllarda yapılır
-    "KPSS Ortaöğretim": datetime.date(2028, 9, 24), # Çift yıllarda yapılır
-    "ALES/3": datetime.date(2027, 11, 21)
+    "KPSS ÖABT": datetime.date(2027, 8, 1)
 }
 
 ticker_metni = ""
