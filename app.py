@@ -157,6 +157,9 @@ if 'kilitli_ogrenci_id' not in st.session_state:
 # YENİ SAAS KİLİDİ: Sisteme giren öğretmenin veya öğrencinin kime ait olduğunu tutar
 if 'aktif_ogretmen_id' not in st.session_state:
     st.session_state['aktif_ogretmen_id'] = None
+# Karşılama mesajı için isim tutucu
+if 'ad_soyad' not in st.session_state:
+    st.session_state['ad_soyad'] = None
 
 if not st.session_state['giris_yapildi']:
     # ==========================================
@@ -213,6 +216,19 @@ if not st.session_state['giris_yapildi']:
         transform: scale(1.02);
         box-shadow: 0 8px 20px rgba(212, 175, 55, 0.4);
     }
+    /* Sekme Renklendirmeleri */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background-color: #f1f5f9;
+        border-radius: 8px 8px 0px 0px;
+        padding: 10px 20px;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #d4af37 !important;
+        color: white !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -229,49 +245,89 @@ if not st.session_state['giris_yapildi']:
         st.markdown("<h1 style='text-align: center; color: #b8860b; margin-bottom: 0px; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); letter-spacing: 2px;'>EMİR HOCA</h1>", unsafe_allow_html=True)
         st.markdown("<p style='text-align: center; color: #64748b; font-size: 18px; margin-top: 5px; margin-bottom: 25px;'>Öğrenci Takip ve Eğitim Koçluğu Portalı</p>", unsafe_allow_html=True)
 
-        with st.form("giris_formu"):
-            st.markdown("<div style='text-align:center; color:#475569; font-size:15px; margin-bottom:15px;'>👋 Sistemi kullanmak için giriş yapınız.</div>", unsafe_allow_html=True)
-            
-            k_adi = st.text_input("Kullanıcı Adı (Öğretmenler) veya Telefon Numarası (Veliler):")
-            k_sifre = st.text_input("Şifre:", type="password")
-            
-            if st.form_submit_button("Sisteme Giriş Yap", type="primary", use_container_width=True):
-                temiz_k_adi = str(k_adi).replace(" ", "").strip()
-                temiz_k_sifre = str(k_sifre).replace(" ", "").strip()
+        # --- YENİ EKLENEN SEKMELİ YAPI (LOGIN / KAYIT) ---
+        tab_giris, tab_kayit = st.tabs(["🔑 Giriş Yap", "📝 Yeni Öğretmen Kaydı"])
+        
+        with tab_giris:
+            with st.form("giris_formu"):
+                st.markdown("<div style='text-align:center; color:#475569; font-size:15px; margin-bottom:15px;'>👋 Sistemi kullanmak için giriş yapınız.</div>", unsafe_allow_html=True)
+                
+                k_adi = st.text_input("Kullanıcı Adı (Öğretmenler) veya Telefon Numarası (Veliler):")
+                k_sifre = st.text_input("Şifre:", type="password")
+                
+                if st.form_submit_button("Sisteme Giriş Yap", type="primary", use_container_width=True):
+                    temiz_k_adi = str(k_adi).replace(" ", "").strip()
+                    temiz_k_sifre = str(k_sifre).replace(" ", "").strip()
 
-                # 1. BULUTTAN ÖĞRETMEN SORGULAMASI (Çoklu Öğretmen Mimarisi)
-                ogretmen_sorgu = supabase.table("ogretmenler").select("*").eq("kullanici_adi", temiz_k_adi).eq("sifre", temiz_k_sifre).execute()
-                
-                if len(ogretmen_sorgu.data) > 0:
-                    st.session_state['giris_yapildi'] = True
-                    st.session_state['rol'] = "ADMIN"
-                    st.session_state['aktif_ogretmen_id'] = ogretmen_sorgu.data[0]['id'] # Odanın kilidini aldık
-                    st.rerun()
-                
-                # 2. BULUTTAN ÖĞRENCİ/VELİ SORGULAMASI
-                else:
-                    temiz_k_sifre_kucuk = temiz_k_sifre.lower()
-                    ogrenci_sorgu = supabase.table("ogrenciler").select("id, ad_soyad, veli_telefon, ogretmen_id").eq("veli_telefon", temiz_k_adi).execute()
+                    # 1. BULUTTAN ÖĞRETMEN SORGULAMASI (Çoklu Öğretmen Mimarisi)
+                    ogretmen_sorgu = supabase.table("ogretmenler").select("*").eq("kullanici_adi", temiz_k_adi).eq("sifre", temiz_k_sifre).execute()
                     
-                    giris_basarili = False
-                    for row in ogrenci_sorgu.data:
-                        db_ad_temiz = str(row['ad_soyad']).replace(" ", "").strip().lower()
-                        beklenen_sifre = f"{db_ad_temiz}42."
-                        
-                        if temiz_k_sifre_kucuk == beklenen_sifre:
+                    if len(ogretmen_sorgu.data) > 0:
+                        user_data = ogretmen_sorgu.data[0]
+                        if user_data['onayli']:
                             st.session_state['giris_yapildi'] = True
-                            st.session_state['rol'] = "OGRENCI"
-                            st.session_state['kilitli_ogrenci_id'] = row['id']
-                            st.session_state['aktif_ogretmen_id'] = row['ogretmen_id'] # Öğrenciyi sadece kendi hocasının alanına hapseder
-                            giris_basarili = True
-                            break
-                            
-                    if giris_basarili:
-                        st.rerun()
+                            st.session_state['rol'] = user_data['rol'] # DB'den SUPER_ADMIN veya OGRETMEN gelir
+                            st.session_state['aktif_ogretmen_id'] = user_data['id']
+                            st.session_state['ad_soyad'] = user_data['ad_soyad']
+                            st.rerun()
+                        else:
+                            st.error("⚠️ Hesabınız henüz onaylanmamış. Lütfen Emir Hoca ile iletişime geçin.")
+                    
+                    # 2. BULUTTAN ÖĞRENCİ/VELİ SORGULAMASI
                     else:
-                        st.error("Hatalı kullanıcı adı veya şifre! Lütfen bilgilerinizi kontrol edin.")
-    
+                        temiz_k_sifre_kucuk = temiz_k_sifre.lower()
+                        ogrenci_sorgu = supabase.table("ogrenciler").select("id, ad_soyad, veli_telefon, ogretmen_id").eq("veli_telefon", temiz_k_adi).execute()
+                        
+                        giris_basarili = False
+                        for row in ogrenci_sorgu.data:
+                            db_ad_temiz = str(row['ad_soyad']).replace(" ", "").strip().lower()
+                            beklenen_sifre = f"{db_ad_temiz}42."
+                            
+                            if temiz_k_sifre_kucuk == beklenen_sifre:
+                                st.session_state['giris_yapildi'] = True
+                                st.session_state['rol'] = "OGRENCI"
+                                st.session_state['kilitli_ogrenci_id'] = row['id']
+                                st.session_state['aktif_ogretmen_id'] = row['ogretmen_id']
+                                st.session_state['ad_soyad'] = row['ad_soyad']
+                                giris_basarili = True
+                                break
+                                
+                        if giris_basarili:
+                            st.rerun()
+                        else:
+                            st.error("Hatalı kullanıcı adı veya şifre! Lütfen bilgilerinizi kontrol edin.")
+        
+        with tab_kayit:
+            with st.form("kayit_formu"):
+                st.info("Sistemi satın aldıysanız buradan kayıt talebi oluşturabilirsiniz.")
+                yeni_ad = st.text_input("Adınız Soyadınız:")
+                yeni_kadi = st.text_input("Belirlediğiniz Kullanıcı Adı (Boşluksuz):")
+                yeni_sifre = st.text_input("Şifre Belirleyin:", type="password")
+                
+                if st.form_submit_button("Kayıt Talebi Gönder", type="primary", use_container_width=True):
+                    if yeni_ad and yeni_kadi and yeni_sifre:
+                        kontrol = supabase.table("ogretmenler").select("*").eq("kullanici_adi", yeni_kadi).execute()
+                        if len(kontrol.data) > 0:
+                            st.error("❌ Bu kullanıcı adı zaten alınmış. Lütfen başka bir tane seçin.")
+                        else:
+                            yeni_data = {
+                                "ad_soyad": yeni_ad,
+                                "kullanici_adi": yeni_kadi,
+                                "sifre": yeni_sifre,
+                                "onayli": False,
+                                "rol": "OGRETMEN"
+                            }
+                            try:
+                                supabase.table("ogretmenler").insert(yeni_data).execute()
+                                st.success("✅ Kayıt talebiniz başarıyla alındı! Emir Hoca onayladıktan sonra giriş yapabilirsiniz.")
+                            except Exception as e:
+                                st.error(f"Kayıt Hatası: {e}")
+                    else:
+                        st.warning("Lütfen tüm alanları doldurun.")
+                        
     st.stop()
+
+# --- GİRİŞ YAPILDIYSA UYGULAMA BURADAN DEVAM EDER ---
 
 # --- ÇIKIŞ YAP BUTONU ---
 c_ust1, c_ust2 = st.columns([10, 1])
