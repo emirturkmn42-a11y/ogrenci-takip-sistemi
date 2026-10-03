@@ -337,6 +337,36 @@ with c_ust2:
         st.session_state.clear()
         st.rerun()
 
+# --- SADECE EMİR HOCA'NIN GÖRECEĞİ KURUCU (SUPER_ADMIN) PANELİ ---
+if st.session_state.get('yetki_seviyesi') == 'SUPER_ADMIN':
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("<h3 style='text-align:center; color:#d4af37;'>👑 Kurucu Paneli</h3>", unsafe_allow_html=True)
+    
+    # Supabase'den onaysız öğretmenleri çekelim
+    onay_bekleyenler = supabase.table("ogretmenler").select("*").eq("onayli", False).execute()
+    
+    if len(onay_bekleyenler.data) > 0:
+        st.sidebar.warning(f"🔔 {len(onay_bekleyenler.data)} Yeni Kayıt Bekliyor!")
+        
+        for ogrt in onay_bekleyenler.data:
+            st.sidebar.markdown(f"👤 **{ogrt['ad_soyad']}**<br><small>@{ogrt['kullanici_adi']}</small>", unsafe_allow_html=True)
+            
+            col1, col2 = st.sidebar.columns(2)
+            with col1:
+                if st.button("✅ Onayla", key=f"onay_{ogrt['id']}", use_container_width=True):
+                    supabase.table("ogretmenler").update({"onayli": True}).eq("id", ogrt['id']).execute()
+                    st.toast(f"{ogrt['ad_soyad']} sisteme onaylandı!", icon="✅")
+                    st.rerun()
+            with col2:
+                if st.button("❌ Reddet", key=f"red_{ogrt['id']}", use_container_width=True):
+                    supabase.table("ogretmenler").delete().eq("id", ogrt['id']).execute()
+                    st.toast("Kayıt reddedildi ve silindi.", icon="🗑️")
+                    st.rerun()
+            st.sidebar.markdown("---")
+    else:
+        st.sidebar.success("✅ Tüm öğretmenler onaylı. Bekleyen yok.")
+
+
 # --- 1. MÜFREDAT HARİTASI (SENİN GÜNCELLEDİĞİN LİSANS KONULARIYLA) ---
 SINAV_MÜFREDATI = {
     "TYT": {
