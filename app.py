@@ -1361,7 +1361,7 @@ if not df.empty:
                 dersler_listesi = list(df_k['ders'].unique()) if not df_k.empty else ["Matematik", "Türkçe", "Fizik", "Kimya", "Biyoloji"]
                 odev_giris_turu = st.radio("Ödev Giriş Mantığı:", ["📚 Kayıtlı Kaynaktan Seç", "✍️ Manuel Giriş Yap"], horizontal=True)
 
-                with st.form("odev_ver_form"):
+                with st.form("odev_ver_form_yeni"):
                     if odev_giris_turu == "📚 Kayıtlı Kaynaktan Seç":
                         if not df_ogrenci_kaynaklar.empty:
                             kaynak_secenekleri = [f"{row['ders']} - {row['kaynak_adi']} ({row['yayin_evi']})" for idx, row in df_ogrenci_kaynaklar.iterrows()]
@@ -1383,16 +1383,22 @@ if not df.empty:
 
                     if st.form_submit_button("Ödevi Ata", type="primary"):
                         if o_kaynak:
-                            # dogru, yanlis, bos değerlerini 0 gönderiyoruz ki NONE olmasın
-                            odev_data = {
-                                "ogrenci_id": secili_id, "ders": o_ders, "kaynak_konu": o_kaynak, 
-                                "verilen_soru": o_soru, "durum": "Bekleniyor", 
-                                "tarih": pd.Timestamp.now().strftime("%d.%m.%Y"),
-                                "dogru": 0, "yanlis": 0, "bos": 0, "net": 0.0
-                            }
-                            supabase.table("odev_takip").insert(odev_data).execute()
-                            st.success("Ödev başarıyla atandı!")
-                            st.rerun()
+                            try:
+                                odev_data = {
+                                    "ogrenci_id": int(secili_id), 
+                                    "ders": o_ders, 
+                                    "kaynak_konu": o_kaynak, 
+                                    "verilen_soru": int(o_soru), 
+                                    "durum": "Bekleniyor", 
+                                    "tarih": pd.Timestamp.now().strftime("%d.%m.%Y"),
+                                    "dogru": 0, "yanlis": 0, "bos": 0, "net": 0.0
+                                }
+                                supabase.table("odev_takip").insert(odev_data).execute()
+                                st.success("Ödev başarıyla atandı!")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Kayıt Hatası: {str(e)}")
+                                st.stop()
                         else:
                             st.error("Lütfen kaynak ve konu bilgisini doldurun.")
         
@@ -1424,16 +1430,16 @@ if not df.empty:
                             
                             st.divider()
                             
-                            # Sonuç Giriş Paneli (Admin ve Öğrenci görebilir, ikisi de girebilir)
+                            # Sonuç Giriş Paneli - KEY EKLERİ DEĞİŞTİRİLDİ
                             st.markdown("###### Sonuç Girişi")
-                            with st.form(key=f"sonuc_form_{row['id']}"):
+                            with st.form(key=f"odev_sonuc_form_{row['id']}"):
                                 sc1, sc2, sc3, sc4 = st.columns(4)
                                 with sc1: d = st.number_input("🟢 Doğru", min_value=0, max_value=int(row['verilen_soru']), value=0)
                                 with sc2: y = st.number_input("🔴 Yanlış", min_value=0, max_value=int(row['verilen_soru']), value=0)
                                 with sc3: b = st.number_input("⚪ Boş", min_value=0, max_value=int(row['verilen_soru']), value=0)
                                 
                                 with sc4:
-                                    st.markdown("<br>", unsafe_allow_html=True) # Butonu hizalamak için boşluk
+                                    st.markdown("<br>", unsafe_allow_html=True) 
                                     if st.form_submit_button("Kaydet ve Tamamla", use_container_width=True, type="primary"):
                                         if (d + y + b) > int(row['verilen_soru']):
                                             st.error("Girdiğiniz değerlerin toplamı hedef soru sayısını geçemez!")
@@ -1448,17 +1454,17 @@ if not df.empty:
                                             st.success("Ödev başarıyla tamamlandı!")
                                             st.rerun()
                             
-                            # Düzenle / Sil Menüsü (Sadece Admin)
+                            # Düzenle / Sil Menüsü (Sadece Admin) - KEY EKLERİ DEĞİŞTİRİLDİ
                             if st.session_state['rol'] == "ADMIN":
                                 with st.expander("⚙️ Düzenle veya Sil", expanded=False):
-                                    with st.form(key=f"duzenle_form_{row['id']}"):
+                                    with st.form(key=f"odev_duzenle_form_{row['id']}"):
                                         d_konu = st.text_input("Kaynak/Konu:", value=row['kaynak_konu'])
                                         d_hedef = st.number_input("Hedef Soru:", value=int(row['verilen_soru']))
                                         if st.form_submit_button("Güncelle"):
                                             supabase.table("odev_takip").update({"kaynak_konu": d_konu, "verilen_soru": d_hedef}).eq("id", row['id']).execute()
                                             st.rerun()
                                             
-                                    if st.button("🗑️ Ödevi Sil", key=f"sil_{row['id']}", type="primary"):
+                                    if st.button("🗑️ Ödevi Sil", key=f"odev_sil_bekleyen_{row['id']}", type="primary"):
                                         supabase.table("odev_takip").delete().eq("id", row['id']).execute()
                                         st.rerun()
 
@@ -1506,18 +1512,17 @@ if not df.empty:
                             else:
                                 st.caption("⚠️ Dikkat! Bu konunun tekrar edilmesi ve boş/yanlış soruların sorulması gerekiyor.")
                                 
-                            # Düzenle / Sil Menüsü (Sadece Admin)
+                            # Düzenle / Sil Menüsü (Sadece Admin) - KEY EKLERİ DEĞİŞTİRİLDİ
                             if st.session_state['rol'] == "ADMIN":
                                 with st.expander("⚙️ Düzenle veya Sil", expanded=False):
-                                    if st.button("🗑️ Ödevi Sil", key=f"sil_tamamlanan_{row['id']}", type="primary"):
+                                    if st.button("🗑️ Ödevi Sil", key=f"odev_sil_tamamlanan_{row['id']}", type="primary"):
                                         supabase.table("odev_takip").delete().eq("id", row['id']).execute()
                                         st.rerun()
-                                    if st.button("🔄 Durumu Bekleniyor'a Çek", key=f"geri_{row['id']}"):
-                                        supabase.table("odev_takip").update({"durum": "Bekleniyor"}).eq("id", row['id']).execute()
+                                    if st.button("🔄 Durumu Bekleniyor'a Çek", key=f"odev_geri_{row['id']}"):
+                                        supabase.table("odev_takip").update({"durum": "Bekleniyor", "dogru": 0, "yanlis": 0, "bos": 0, "net": 0}).eq("id", row['id']).execute()
                                         st.rerun()
         else:
             st.info("Henüz atanmış bir ödev bulunmuyor.")
-
 # --- DENEME ANALİZİ VE NET TAKİBİ ---
     with tab5:
         col_veri_giris, col_grafik = st.columns([1, 2])
