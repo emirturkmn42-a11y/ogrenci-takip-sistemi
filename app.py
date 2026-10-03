@@ -161,91 +161,90 @@ if 'ad_soyad' not in st.session_state:
 
 if not st.session_state['giris_yapildi']:
     # ==========================================
-    # 💎 ULTRA MODERN SAAS PORTAL TASARIMI
+    # 💎 FERAH, AYDINLIK & LÜKS SAAS PORTAL TASARIMI
     # ==========================================
     st.markdown("""
     <style>
     .stApp {
-        background-color: #0f172a;
-        background-image: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
-        color: #f8fafc;
+        background-color: #f8fafc;
+        background-image: linear-gradient(135deg, #fdfbfb 0%, #f1f5f9 100%);
+        color: #1e293b;
     }
     header {visibility: hidden;}
 
-    /* Kart Tasarımları */
-    .portal-card {
-        background: rgba(30, 41, 59, 0.7);
-        border: 2px solid rgba(212, 175, 55, 0.3);
-        border-radius: 16px;
-        padding: 25px;
-        text-align: center;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        backdrop-filter: blur(10px);
-        transition: 0.3s;
-        margin-bottom: 20px;
-    }
-    .portal-card:hover {
-        border-color: #d4af37;
-        transform: translateY(-5px);
-        box-shadow: 0 15px 40px rgba(212, 175, 55, 0.2);
-    }
-    
-    /* Form Alanları */
+    /* Form Kutusu - Ferah Beyaz Tasarım */
     [data-testid="stForm"] {
-        background-color: rgba(30, 41, 59, 0.85) !important;
+        background-color: rgba(255, 255, 255, 0.95) !important;
         border: 2px solid #d4af37 !important;
         border-radius: 16px;
         padding: 30px;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.06);
     }
     .stTextInput input {
-        background-color: #0f172a !important;
-        color: #f8fafc !important;
-        border: 1.5px solid #334155 !important;
+        background-color: #ffffff !important;
+        color: #1e293b !important;
+        border: 1.5px solid #cbd5e1 !important;
         border-radius: 8px;
         font-weight: bold;
     }
     .stTextInput input:focus {
         border: 2px solid #d4af37 !important;
+        box-shadow: 0 0 8px rgba(212, 175, 55, 0.3) !important;
     }
     .stTextInput p {
-        color: #cbd5e1 !important;
+        color: #334155 !important;
         font-size: 14px;
-        font-weight: 600;
+        font-weight: 700;
     }
     [data-testid="stFormSubmitButton"] button {
         background: linear-gradient(90deg, #d4af37, #f1c40f) !important;
-        color: #0f172a !important;
+        color: #101725 !important;
         font-weight: 900 !important;
         font-size: 16px !important;
         border-radius: 8px !important;
         width: 100% !important;
         padding: 10px !important;
+        border: none !important;
+        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+    }
+    [data-testid="stFormSubmitButton"] button:hover {
+        transform: scale(1.02);
     }
     </style>
     """, unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # Logo / Başlık Alanı
+    # Logo / Karikatür (Kolonlar yardımıyla boyutu küçültüldü ve ortalandı)
     col_l1, col_l2, col_l3 = st.columns([1, 2, 1])
     with col_l2:
-        try:
-            st.image("karikatur.png", use_container_width=True)
-        except:
-            st.markdown("<div style='text-align: center; font-size: 50px;'>👑</div>", unsafe_allow_html=True)
-            
-        st.markdown("<h1 style='text-align: center; color: #d4af37; margin-bottom: 0px; letter-spacing: 2px;'>EMİR HOCA</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: #94a3b8; font-size: 16px; margin-top: 5px; margin-bottom: 30px;'>Yeni Nesil Öğrenci Takip & Eğitim Koçluğu Platformu</p>", unsafe_allow_html=True)
+        # Karikatür için daraltılmış alt kolonlar (Dev gibi olmasını engeller)
+        c_resim1, c_resim2, c_resim3 = st.columns([1.5, 2, 1.5])
+        with c_resim2:
+            try:
+                st.image("karikatur.png", use_container_width=True)
+            except:
+                st.markdown("<div style='text-align: center; font-size: 50px;'>👑</div>", unsafe_allow_html=True)
+                
+        st.markdown("<h1 style='text-align: center; color: #b8860b; margin-top: 10px; margin-bottom: 0px; letter-spacing: 2px;'>EMİR HOCA</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #64748b; font-size: 15px; margin-top: 2px; margin-bottom: 15px;'>Dijital Eğitim Koçluğu & Öğrenci Takip Portalı</p>", unsafe_allow_html=True)
 
-    # 3 Ana Giriş / Seçim Sekmesi (KocApp Tarzı Kart Mantığı)
+        # 🌟 Yeni ve Şık Dinamik Karşılama Kartı
+        st.markdown("""
+        <div style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1px solid #fde047; padding: 12px 18px; border-radius: 12px; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+            <span style="color: #b45309; font-weight: 700; font-size: 15px;">👋 Değerli Eğitimci / Ziyaretçi, Hoş Geldiniz!</span><br>
+            <span style="color: #78350f; font-size: 13px;">Başarı yolculuğunuzu yönetmek için lütfen panelinizi seçin.</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # 3 Ana Giriş / Seçim Sekmesi
     tab_ogretmen, tab_ogrenci, tab_kayit = st.tabs(["👨‍🏫 Öğretmen Girişi", "🎓 Öğrenci / Veli Girişi", "🚀 Yeni Eğitmen Kaydı"])
 
     with tab_ogretmen:
         c1, c2, c3 = st.columns([1, 1.2, 1])
         with c2:
             with st.form("ogretmen_giris_formu"):
-                st.markdown("<h4 style='text-align: center; color: #d4af37;'>Öğretmen Paneli Girişi</h4>", unsafe_allow_html=True)
+                st.markdown("<h4 style='text-align: center; color: #b8860b;'>Öğretmen Paneli Girişi</h4>", unsafe_allow_html=True)
                 k_adi = st.text_input("Kullanıcı Adı")
                 k_sifre = st.text_input("Şifre", type="password")
                 
@@ -273,7 +272,7 @@ if not st.session_state['giris_yapildi']:
         c1, c2, c3 = st.columns([1, 1.2, 1])
         with c2:
             with st.form("ogrenci_giris_formu"):
-                st.markdown("<h4 style='text-align: center; color: #d4af37;'>Öğrenci / Veli Girişi</h4>", unsafe_allow_html=True)
+                st.markdown("<h4 style='text-align: center; color: #b8860b;'>Öğrenci / Veli Girişi</h4>", unsafe_allow_html=True)
                 veli_tel = st.text_input("Kayıtlı Veli Telefon Numarası")
                 ogrenci_sifre_input = st.text_input("Öğrenci Şifresi (Örn: adsoyad42.)", type="password")
                 
@@ -306,7 +305,7 @@ if not st.session_state['giris_yapildi']:
         c1, c2, c3 = st.columns([1, 1.2, 1])
         with c2:
             with st.form("kayit_formu"):
-                st.markdown("<h4 style='text-align: center; color: #d4af37;'>Yeni Eğitmen Kaydı</h4>", unsafe_allow_html=True)
+                st.markdown("<h4 style='text-align: center; color: #b8860b;'>Yeni Eğitmen Kaydı</h4>", unsafe_allow_html=True)
                 yeni_ad = st.text_input("Adınız Soyadınız")
                 yeni_kadi = st.text_input("Kullanıcı Adı Seçin (Boşluksuz)")
                 yeni_sifre = st.text_input("Şifre Belirleyin", type="password")
