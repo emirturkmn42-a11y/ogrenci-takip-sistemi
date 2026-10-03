@@ -273,8 +273,8 @@ if not st.session_state['giris_yapildi']:
         with c2:
             with st.form("ogrenci_giris_formu"):
                 st.markdown("<h4 style='text-align: center; color: #b8860b;'>Öğrenci / Veli Girişi</h4>", unsafe_allow_html=True)
-                veli_tel = st.text_input("Kayıtlı Veli Telefon Numarası")
-                ogrenci_sifre_input = st.text_input("Öğrenci Şifresi (Örn: adsoyad42.)", type="password")
+                veli_tel = st.text_input("Kullanıcı Adı")
+                ogrenci_sifre_input = st.text_input("Öğrenci Şifresi", type="password")
                 
                 if st.form_submit_button("Koçluk Paneline Git", type="primary"):
                     temiz_tel = str(veli_tel).replace(" ", "").strip()
