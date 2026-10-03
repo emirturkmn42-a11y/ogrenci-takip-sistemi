@@ -832,14 +832,16 @@ lgs_tarihi = date(2027, 6, 6)
 kalan_yks = max(0, (yks_tarihi - bugun).days)
 kalan_lgs = max(0, (lgs_tarihi - bugun).days)
 
-# 1. Üst Kurumsal Karşılama Bannerı
-st.markdown("""
+# Sisteme giren öğretmenin adını alıyoruz (Eğer isim bulamazsa varsayılan olarak EMİR HOCA yazar)
+aktif_ogretmen_adi = st.session_state.get('ad_soyad', 'EMİR HOCA')
+
+# 1. Üst Kurumsal Karşılama Bannerı (Dinamik Hale Getirildi)
+st.markdown(f"""
 <div class="ots-header">
-    <h1>🎓 EMİR HOCA — ÖĞRENCİ TAKİP & KOÇLUK PANELİ</h1>
+    <h1>🎓 {aktif_ogretmen_adi.upper()} — ÖĞRENCİ TAKİP & KOÇLUK PANELİ</h1>
     <p>Öğrenci gelişimini, haftalık çalışma programlarını, ödevleri ve sınav netlerini tek ekrandan yönetin.</p>
 </div>
 """, unsafe_allow_html=True)
-
 # 2. Sayaç Sütunları (4'lü Sabit Yapı - HİÇ BOZULMADI)
 col_sayac1, col_sayac2, col_sayac3, col_sayac4 = st.columns(4)
 
