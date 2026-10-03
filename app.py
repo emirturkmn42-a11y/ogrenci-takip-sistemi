@@ -154,162 +154,168 @@ if 'rol' not in st.session_state:
     st.session_state['rol'] = None
 if 'kilitli_ogrenci_id' not in st.session_state:
     st.session_state['kilitli_ogrenci_id'] = None
-# YENİ SAAS KİLİDİ: Sisteme giren öğretmenin veya öğrencinin kime ait olduğunu tutar
 if 'aktif_ogretmen_id' not in st.session_state:
     st.session_state['aktif_ogretmen_id'] = None
-# Karşılama mesajı için isim tutucu
 if 'ad_soyad' not in st.session_state:
     st.session_state['ad_soyad'] = None
 
 if not st.session_state['giris_yapildi']:
     # ==========================================
-    # 💎 FERAH & AYDINLIK GİRİŞ EKRANI TASARIMI
+    # 💎 ULTRA MODERN SAAS PORTAL TASARIMI
     # ==========================================
     st.markdown("""
     <style>
-    /* Tüm sayfanın arka planı */
     .stApp {
-        background-color: #f8fafc;
-        background-image: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
-        color: #1e293b;
+        background-color: #0f172a;
+        background-image: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+        color: #f8fafc;
     }
     header {visibility: hidden;}
-    
-    /* Giriş Kutusunun Tasarımı */
-    [data-testid="stForm"] {
-        background-color: rgba(255, 255, 255, 0.85) !important;
-        border: 2px solid #d4af37 !important;
-        border-radius: 15px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-        padding: 30px;
+
+    /* Kart Tasarımları */
+    .portal-card {
+        background: rgba(30, 41, 59, 0.7);
+        border: 2px solid rgba(212, 175, 55, 0.3);
+        border-radius: 16px;
+        padding: 25px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         backdrop-filter: blur(10px);
+        transition: 0.3s;
+        margin-bottom: 20px;
+    }
+    .portal-card:hover {
+        border-color: #d4af37;
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(212, 175, 55, 0.2);
+    }
+    
+    /* Form Alanları */
+    [data-testid="stForm"] {
+        background-color: rgba(30, 41, 59, 0.85) !important;
+        border: 2px solid #d4af37 !important;
+        border-radius: 16px;
+        padding: 30px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
     }
     .stTextInput input {
-        background-color: #ffffff !important;
-        color: #1e293b !important;
-        border: 1.5px solid #cbd5e1 !important;
+        background-color: #0f172a !important;
+        color: #f8fafc !important;
+        border: 1.5px solid #334155 !important;
         border-radius: 8px;
         font-weight: bold;
-        transition: 0.3s;
     }
     .stTextInput input:focus {
         border: 2px solid #d4af37 !important;
-        box-shadow: 0 0 5px rgba(212, 175, 55, 0.3) !important;
     }
     .stTextInput p {
-        color: #334155 !important;
-        font-size: 15px;
-        font-weight: 700;
+        color: #cbd5e1 !important;
+        font-size: 14px;
+        font-weight: 600;
     }
     [data-testid="stFormSubmitButton"] button {
         background: linear-gradient(90deg, #d4af37, #f1c40f) !important;
-        color: #101725 !important;
+        color: #0f172a !important;
         font-weight: 900 !important;
-        font-size: 18px !important;
-        border: none !important;
+        font-size: 16px !important;
         border-radius: 8px !important;
-        transition: 0.3s !important;
         width: 100% !important;
         padding: 10px !important;
-    }
-    [data-testid="stFormSubmitButton"] button:hover {
-        transform: scale(1.02);
-        box-shadow: 0 8px 20px rgba(212, 175, 55, 0.4);
-    }
-    /* Sekme Renklendirmeleri */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        background-color: #f1f5f9;
-        border-radius: 8px 8px 0px 0px;
-        padding: 10px 20px;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #d4af37 !important;
-        color: white !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    c1, c2, c3 = st.columns([1, 1.5, 1])
-    with c2:
-        c_resim1, c_resim2, c_resim3 = st.columns([1, 2, 1])
-        with c_resim2:
-            try:
-                st.image("karikatur.png", use_container_width=True) 
-            except:
-                st.markdown("<div style='text-align: center; font-size: 60px;'>👑</div>", unsafe_allow_html=True)
-                
-        st.markdown("<h1 style='text-align: center; color: #b8860b; margin-bottom: 0px; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); letter-spacing: 2px;'>EMİR HOCA</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: #64748b; font-size: 18px; margin-top: 5px; margin-bottom: 25px;'>Öğrenci Takip ve Eğitim Koçluğu Portalı</p>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+    
+    # Logo / Başlık Alanı
+    col_l1, col_l2, col_l3 = st.columns([1, 2, 1])
+    with col_l2:
+        try:
+            st.image("karikatur.png", use_container_width=True)
+        except:
+            st.markdown("<div style='text-align: center; font-size: 50px;'>👑</div>", unsafe_allow_html=True)
+            
+        st.markdown("<h1 style='text-align: center; color: #d4af37; margin-bottom: 0px; letter-spacing: 2px;'>EMİR HOCA</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #94a3b8; font-size: 16px; margin-top: 5px; margin-bottom: 30px;'>Yeni Nesil Öğrenci Takip & Eğitim Koçluğu Platformu</p>", unsafe_allow_html=True)
 
-        # --- YENİ EKLENEN SEKMELİ YAPI (LOGIN / KAYIT) ---
-        tab_giris, tab_kayit = st.tabs(["🔑 Giriş Yap", "📝 Yeni Öğretmen Kaydı"])
-        
-        with tab_giris:
-            with st.form("giris_formu"):
-                st.markdown("<div style='text-align:center; color:#475569; font-size:15px; margin-bottom:15px;'>👋 Sistemi kullanmak için giriş yapınız.</div>", unsafe_allow_html=True)
+    # 3 Ana Giriş / Seçim Sekmesi (KocApp Tarzı Kart Mantığı)
+    tab_ogretmen, tab_ogrenci, tab_kayit = st.tabs(["👨‍🏫 Öğretmen Girişi", "🎓 Öğrenci / Veli Girişi", "🚀 Yeni Eğitmen Kaydı"])
+
+    with tab_ogretmen:
+        c1, c2, c3 = st.columns([1, 1.2, 1])
+        with c2:
+            with st.form("ogretmen_giris_formu"):
+                st.markdown("<h4 style='text-align: center; color: #d4af37;'>Öğretmen Paneli Girişi</h4>", unsafe_allow_html=True)
+                k_adi = st.text_input("Kullanıcı Adı")
+                k_sifre = st.text_input("Şifre", type="password")
                 
-                k_adi = st.text_input("Kullanıcı Adı (Öğretmenler) veya Telefon Numarası (Veliler):")
-                k_sifre = st.text_input("Şifre:", type="password")
-                
-                if st.form_submit_button("Sisteme Giriş Yap", type="primary", use_container_width=True):
+                if st.form_submit_button("Sisteme Güvenli Giriş", type="primary"):
                     temiz_k_adi = str(k_adi).replace(" ", "").strip()
                     temiz_k_sifre = str(k_sifre).replace(" ", "").strip()
 
-                    # 1. BULUTTAN ÖĞRETMEN SORGULAMASI (Çoklu Öğretmen Mimarisi)
                     ogretmen_sorgu = supabase.table("ogretmenler").select("*").eq("kullanici_adi", temiz_k_adi).eq("sifre", temiz_k_sifre).execute()
                     
                     if len(ogretmen_sorgu.data) > 0:
                         user_data = ogretmen_sorgu.data[0]
                         if user_data['onayli']:
                             st.session_state['giris_yapildi'] = True
-                            st.session_state['rol'] = "ADMIN"  # SİSTEMİN ÇÖKMEMESİ İÇİN BURAYI ESKİ HALİNE GETİRDİK
-                            st.session_state['yetki_seviyesi'] = user_data['rol'] # SUPER_ADMIN gizli patron yetkini burada saklıyoruz
+                            st.session_state['rol'] = "ADMIN"
+                            st.session_state['yetki_seviyesi'] = user_data['rol']
                             st.session_state['aktif_ogretmen_id'] = user_data['id']
                             st.session_state['ad_soyad'] = user_data['ad_soyad']
                             st.rerun()
                         else:
-                            st.error("⚠️ Hesabınız henüz onaylanmamış. Lütfen Emir Hoca ile iletişime geçin.")
-                    
-                    # 2. BULUTTAN ÖĞRENCİ/VELİ SORGULAMASI
+                            st.error("⚠️ Hesabınız henüz onaylanmamış.")
                     else:
-                        temiz_k_sifre_kucuk = temiz_k_sifre.lower()
-                        ogrenci_sorgu = supabase.table("ogrenciler").select("id, ad_soyad, veli_telefon, ogretmen_id").eq("veli_telefon", temiz_k_adi).execute()
-                        
-                        giris_basarili = False
-                        for row in ogrenci_sorgu.data:
-                            db_ad_temiz = str(row['ad_soyad']).replace(" ", "").strip().lower()
-                            beklenen_sifre = f"{db_ad_temiz}42."
-                            
-                            if temiz_k_sifre_kucuk == beklenen_sifre:
-                                st.session_state['giris_yapildi'] = True
-                                st.session_state['rol'] = "OGRENCI"
-                                st.session_state['kilitli_ogrenci_id'] = row['id']
-                                st.session_state['aktif_ogretmen_id'] = row['ogretmen_id']
-                                st.session_state['ad_soyad'] = row['ad_soyad']
-                                giris_basarili = True
-                                break
-                                
-                        if giris_basarili:
-                            st.rerun()
-                        else:
-                            st.error("Hatalı kullanıcı adı veya şifre! Lütfen bilgilerinizi kontrol edin.")
-        
-        with tab_kayit:
-            with st.form("kayit_formu"):
-                st.info("Sistemi satın aldıysanız buradan kayıt talebi oluşturabilirsiniz.")
-                yeni_ad = st.text_input("Adınız Soyadınız:")
-                yeni_kadi = st.text_input("Belirlediğiniz Kullanıcı Adı (Boşluksuz):")
-                yeni_sifre = st.text_input("Şifre Belirleyin:", type="password")
+                        st.error("❌ Hatalı kullanıcı adı veya şifre!")
+
+    with tab_ogrenci:
+        c1, c2, c3 = st.columns([1, 1.2, 1])
+        with c2:
+            with st.form("ogrenci_giris_formu"):
+                st.markdown("<h4 style='text-align: center; color: #d4af37;'>Öğrenci / Veli Girişi</h4>", unsafe_allow_html=True)
+                veli_tel = st.text_input("Kayıtlı Veli Telefon Numarası")
+                ogrenci_sifre_input = st.text_input("Öğrenci Şifresi (Örn: adsoyad42.)", type="password")
                 
-                if st.form_submit_button("Kayıt Talebi Gönder", type="primary", use_container_width=True):
+                if st.form_submit_button("Koçluk Paneline Git", type="primary"):
+                    temiz_tel = str(veli_tel).replace(" ", "").strip()
+                    temiz_sifre = str(ogrenci_sifre_input).replace(" ", "").strip().lower()
+                    
+                    ogrenci_sorgu = supabase.table("ogrenciler").select("id, ad_soyad, veli_telefon, ogretmen_id").eq("veli_telefon", temiz_tel).execute()
+                    
+                    giris_basarili = False
+                    for row in ogrenci_sorgu.data:
+                        db_ad_temiz = str(row['ad_soyad']).replace(" ", "").strip().lower()
+                        beklenen_sifre = f"{db_ad_temiz}42."
+                        
+                        if temiz_sifre == beklenen_sifre:
+                            st.session_state['giris_yapildi'] = True
+                            st.session_state['rol'] = "OGRENCI"
+                            st.session_state['kilitli_ogrenci_id'] = row['id']
+                            st.session_state['aktif_ogretmen_id'] = row['ogretmen_id']
+                            st.session_state['ad_soyad'] = row['ad_soyad']
+                            giris_basarili = True
+                            break
+                            
+                    if giris_basarili:
+                        st.rerun()
+                    else:
+                        st.error("❌ Bilgiler eşleşmedi. Telefonu veya şifreyi kontrol edin.")
+
+    with tab_kayit:
+        c1, c2, c3 = st.columns([1, 1.2, 1])
+        with c2:
+            with st.form("kayit_formu"):
+                st.markdown("<h4 style='text-align: center; color: #d4af37;'>Yeni Eğitmen Kaydı</h4>", unsafe_allow_html=True)
+                yeni_ad = st.text_input("Adınız Soyadınız")
+                yeni_kadi = st.text_input("Kullanıcı Adı Seçin (Boşluksuz)")
+                yeni_sifre = st.text_input("Şifre Belirleyin", type="password")
+                
+                if st.form_submit_button("Kayıt Talebi Oluştur", type="primary"):
                     if yeni_ad and yeni_kadi and yeni_sifre:
                         kontrol = supabase.table("ogretmenler").select("*").eq("kullanici_adi", yeni_kadi).execute()
                         if len(kontrol.data) > 0:
-                            st.error("❌ Bu kullanıcı adı zaten alınmış. Lütfen başka bir tane seçin.")
+                            st.error("❌ Bu kullanıcı adı zaten alınmış.")
                         else:
                             yeni_data = {
                                 "ad_soyad": yeni_ad,
@@ -320,14 +326,13 @@ if not st.session_state['giris_yapildi']:
                             }
                             try:
                                 supabase.table("ogretmenler").insert(yeni_data).execute()
-                                st.success("✅ Kayıt talebiniz başarıyla alındı! Emir Hoca onayladıktan sonra giriş yapabilirsiniz.")
+                                st.success("✅ Talebiniz alındı! Emir Hoca onayından sonra giriş yapabilirsiniz.")
                             except Exception as e:
-                                st.error(f"Kayıt Hatası: {e}")
+                                st.error(f"Hata: {e}")
                     else:
                         st.warning("Lütfen tüm alanları doldurun.")
-                        
-    st.stop()
 
+    st.stop()
 # --- GİRİŞ YAPILDIYSA UYGULAMA BURADAN DEVAM EDER ---
 # --- PROFİL AYARLARI (SİDEBAR AÇILIR KUTU) ---
 with st.sidebar.expander("⚙️ Profil Ayarları"):
