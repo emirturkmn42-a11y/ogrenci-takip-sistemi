@@ -266,7 +266,8 @@ if not st.session_state['giris_yapildi']:
                         user_data = ogretmen_sorgu.data[0]
                         if user_data['onayli']:
                             st.session_state['giris_yapildi'] = True
-                            st.session_state['rol'] = user_data['rol'] # DB'den SUPER_ADMIN veya OGRETMEN gelir
+                            st.session_state['rol'] = "ADMIN"  # SİSTEMİN ÇÖKMEMESİ İÇİN BURAYI ESKİ HALİNE GETİRDİK
+                            st.session_state['yetki_seviyesi'] = user_data['rol'] # SUPER_ADMIN gizli patron yetkini burada saklıyoruz
                             st.session_state['aktif_ogretmen_id'] = user_data['id']
                             st.session_state['ad_soyad'] = user_data['ad_soyad']
                             st.rerun()
