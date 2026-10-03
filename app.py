@@ -373,34 +373,65 @@ with c_ust2:
         st.session_state.clear()
         st.rerun()
 
-# --- SADECE EMİR HOCA'NIN GÖRECEĞİ KURUCU (SUPER_ADMIN) PANELİ ---
+# --- SADECE EMİR HOCA'NIN GÖRECEĞİ KURUCU (SUPER_ADMIN) YÖNETİM PANELİ ---
 if st.session_state.get('yetki_seviyesi') == 'SUPER_ADMIN':
     st.sidebar.markdown("---")
     st.sidebar.markdown("<h3 style='text-align:center; color:#d4af37;'>👑 Kurucu Paneli</h3>", unsafe_allow_html=True)
     
-    # Supabase'den onaysız öğretmenleri çekelim
-    onay_bekleyenler = supabase.table("ogretmenler").select("*").eq("onayli", False).execute()
+    # Yönetim panelini iki sekmeye bölüyoruz
+    kurucu_tab1, kurucu_tab2 = st.sidebar.tabs(["⏳ Bekleyenler", "👥 Öğretmenler"])
     
-    if len(onay_bekleyenler.data) > 0:
-        st.sidebar.warning(f"🔔 {len(onay_bekleyenler.data)} Yeni Kayıt Bekliyor!")
+    with kurucu_tab1:
+        # Onay bekleyen öğretmenler
+        onay_bekleyenler = supabase.table("ogretmenler").select("*").eq("onayli", False).execute()
         
-        for ogrt in onay_bekleyenler.data:
-            st.sidebar.markdown(f"👤 **{ogrt['ad_soyad']}**<br><small>@{ogrt['kullanici_adi']}</small>", unsafe_allow_html=True)
+        if len(onay_bekleyenler.data) > 0:
+            st.warning(f"🔔 {len(onay_bekleyenler.data)} Yeni Kayıt Bekliyor!")
             
-            col1, col2 = st.sidebar.columns(2)
-            with col1:
-                if st.button("✅ Onayla", key=f"onay_{ogrt['id']}", use_container_width=True):
-                    supabase.table("ogretmenler").update({"onayli": True}).eq("id", ogrt['id']).execute()
-                    st.toast(f"{ogrt['ad_soyad']} sisteme onaylandı!", icon="✅")
-                    st.rerun()
-            with col2:
-                if st.button("❌ Reddet", key=f"red_{ogrt['id']}", use_container_width=True):
-                    supabase.table("ogretmenler").delete().eq("id", ogrt['id']).execute()
-                    st.toast("Kayıt reddedildi ve silindi.", icon="🗑️")
-                    st.rerun()
-            st.sidebar.markdown("---")
-    else:
-        st.sidebar.success("✅ Tüm öğretmenler onaylı. Bekleyen yok.")
+            for ogrt in onay_bekleyenler.data:
+                st.markdown(f"👤 **{ogrt['ad_soyad']}**<br><small>@{ogrt['kullanici_adi']}</small>", unsafe_allow_html=True)
+                
+                col_onay1, col_onay2 = st.columns(2)
+                with col_onay1:
+                    if st.button("✅ Onayla", key=f"onay_{ogrt['id']}", use_container_width=True):
+                        supabase.table("ogretmenler").update({"onayli": True}).eq("id", ogrt['id']).execute()
+                        st.toast(f"{ogrt['ad_soyad']} sisteme onaylandı!", icon="✅")
+                        st.rerun()
+                with col_onay2:
+                    if st.button("❌ Reddet", key=f"red_{ogrt['id']}", use_container_width=True):
+                        supabase.table("ogretmenler").delete().eq("id", ogrt['id']).execute()
+                        st.toast("Kayıt reddedildi ve silindi.", icon="🗑️")
+                        st.rerun()
+                st.markdown("---")
+        else:
+            st.success("Bekleyen onay yok.")
+            
+    with kurucu_tab2:
+        # Sistemdeki TÜM öğretmenleri listeleyelim
+        tum_ogretmenler = supabase.table("ogretmenler").select("*").execute()
+        
+        if len(tum_ogretmenler.data) > 0:
+            st.caption("Sistemdeki tüm kayıtlı öğretmenler:")
+            for ogrt in tum_ogretmenler.data:
+                st.markdown(f"👤 **{ogrt['ad_soyad']}**<br><small>@{ogrt['kullanici_adi']} | Rol: {ogrt['rol']}</small>", unsafe_allow_html=True)
+                
+                # Kurucu (Sen) kendi hesabını yanlışlıkla silmesin diye koruma koyuyoruz
+                if ogrt['rol'] != 'SUPER_ADMIN':
+                    if st.button("🗑️ Öğretmeni Sil", key=f"sil_ogrt_{ogrt['id']}", use_container_width=True):
+                        try:
+                            # 1. Adım: Silinen öğretmenin öğrencilerini sana (Emir Hoca'ya, id=1) devret
+                            supabase.table("ogrenciler").update({"ogretmen_id": 1}).eq("ogretmen_id", ogrt['id']).execute()
+                            
+                            # 2. Adım: Öğretmeni veritabanından tamamen sil
+                            supabase.table("ogretmenler").delete().eq("id", ogrt['id']).execute()
+                            
+                            st.toast(f"{ogrt['ad_soyad']} silindi. Öğrencileri size aktarıldı.", icon="🗑️")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Silme hatası: {e}")
+                else:
+                    st.caption("🔒 Kurucu Hesap (Dokunulmaz)")
+                st.markdown("---")
 
 
 # --- 1. MÜFREDAT HARİTASI (SENİN GÜNCELLEDİĞİN LİSANS KONULARIYLA) ---
