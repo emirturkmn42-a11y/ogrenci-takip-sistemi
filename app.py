@@ -329,6 +329,42 @@ if not st.session_state['giris_yapildi']:
     st.stop()
 
 # --- GİRİŞ YAPILDIYSA UYGULAMA BURADAN DEVAM EDER ---
+# --- PROFİL AYARLARI (SİDEBAR AÇILIR KUTU) ---
+with st.sidebar.expander("⚙️ Profil Ayarları"):
+    st.info("Bilgilerinizi buradan güncelleyebilirsiniz.")
+    
+    # Supabase'den öğretmenin güncel bilgilerini çekiyoruz ki kutular dolu gelsin
+    mevcut_bilgi_sorgusu = supabase.table("ogretmenler").select("ad_soyad, kullanici_adi, sifre").eq("id", st.session_state['aktif_ogretmen_id']).execute()
+    
+    if len(mevcut_bilgi_sorgusu.data) > 0:
+        mevcut = mevcut_bilgi_sorgusu.data[0]
+        
+        with st.form("profil_guncelleme_formu"):
+            yeni_ad = st.text_input("Ad Soyad", value=mevcut['ad_soyad'])
+            yeni_kadi = st.text_input("Kullanıcı Adı", value=mevcut['kullanici_adi'])
+            yeni_sifre = st.text_input("Şifre", value=mevcut['sifre'], type="password")
+            
+            if st.form_submit_button("💾 Değişiklikleri Kaydet", use_container_width=True):
+                # Başka biri bu kullanıcı adını almış mı kontrolü (kendisi hariç)
+                kadi_kontrol = supabase.table("ogretmenler").select("id").eq("kullanici_adi", yeni_kadi).neq("id", st.session_state['aktif_ogretmen_id']).execute()
+                
+                if len(kadi_kontrol.data) > 0:
+                    st.error("❌ Bu kullanıcı adı başkası tarafından kullanılıyor.")
+                else:
+                    try:
+                        # Veritabanını güncelle
+                        supabase.table("ogretmenler").update({
+                            "ad_soyad": yeni_ad,
+                            "kullanici_adi": yeni_kadi,
+                            "sifre": yeni_sifre
+                        }).eq("id", st.session_state['aktif_ogretmen_id']).execute()
+                        
+                        # Ekranda ismin hemen değişmesi için session_state'i de güncelle
+                        st.session_state['ad_soyad'] = yeni_ad
+                        st.success("✅ Bilgileriniz başarıyla güncellendi!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error("Bir hata oluştu, lütfen tekrar deneyin.")
 
 # --- ÇIKIŞ YAP BUTONU ---
 c_ust1, c_ust2 = st.columns([10, 1])
