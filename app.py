@@ -176,24 +176,24 @@ if not st.session_state['giris_yapildi']:
     # ==========================================
     st.markdown("""
     <style>
-    /* Genel Arka Plan: Çok hafif ve ferah bir gradient */
+    /* Genel Arka Plan */
     .stApp {
         background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
         color: #1e293b;
     }
     header {visibility: hidden;}
     
-    /* Sağ form kutusu - Cam Efekti (Glassmorphism) ve Lüks Tasarım */
+    /* Sağ form kutusu - Cam Efekti (Glassmorphism) */
     [data-testid="stForm"] {
-        background-color: rgba(255, 255, 255, 0.85) !important;
+        background-color: rgba(255, 255, 255, 0.9) !important;
         backdrop-filter: blur(12px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.6) !important;
+        border: 1px solid rgba(255, 255, 255, 0.8) !important;
         border-radius: 24px;
         padding: 35px;
         box-shadow: 0 25px 50px rgba(0,0,0,0.05);
     }
     
-    /* Input Alanları - Pürüzsüz hatlar */
+    /* Input Alanları */
     .stTextInput input { 
         border-radius: 12px; 
         padding: 14px; 
@@ -228,24 +228,28 @@ if not st.session_state['giris_yapildi']:
         box-shadow: 0 12px 25px rgba(212, 175, 55, 0.3);
     }
     
-    /* Sekmeler (Tabs) - Daha yuvarlak ve estetik */
+    /* Sekmeler (Tabs) - Yepyeni, şık ve bütünleşik buton tasarımı */
     .stTabs [data-baseweb="tab-list"] {
-        background-color: transparent;
-        gap: 8px;
+        background-color: #e2e8f0;
+        border-radius: 14px;
+        padding: 6px;
+        gap: 6px;
+        margin-bottom: 25px;
     }
     .stTabs [data-baseweb="tab"] {
-        background-color: rgba(255,255,255,0.5);
+        background-color: transparent;
         border-radius: 10px;
-        padding: 10px 20px;
+        padding: 12px 5px;
         color: #64748b;
         font-weight: 700;
-        border: 1px solid transparent;
+        font-size: 15px;
+        border: none !important;
+        transition: all 0.3s ease;
     }
     .stTabs [aria-selected="true"] {
         background-color: #ffffff !important;
-        color: #1e293b !important;
-        border: 1px solid #e2e8f0;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        color: #0f172a !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
     </style>
     """, unsafe_allow_html=True)
@@ -425,15 +429,15 @@ if not st.session_state['giris_yapildi']:
         
         st.markdown("<h3 style='color: #1e293b; text-align: center; margin-bottom: 25px; font-weight: 800; letter-spacing: -0.5px;'>Sisteme Giriş Yapın</h3>", unsafe_allow_html=True)
         
-        # --- GİRİŞ VE KAYIT PANELİ ---
-        tab_ogretmen, tab_ogrenci, tab_kayit = st.tabs(["👨‍🏫 Öğretmen", "🎓 Öğrenci / Veli", "✨ Kayıt Ol"])
+        # --- GİRİŞ VE KAYIT PANELİ (YENİ SEKME İSİMLERİ) ---
+        tab_ogretmen, tab_ogrenci, tab_kayit = st.tabs(["👨‍🏫 Öğretmen Girişi", "🎓 Öğrenci / Veli Girişi", "✨ Kayıt Ol"])
 
         with tab_ogretmen:
             with st.form("ogretmen_giris_formu"):
                 k_adi = st.text_input("Kullanıcı Adı")
                 k_sifre = st.text_input("Şifre", type="password")
                 
-                if st.form_submit_button("Panelime Git"):
+                if st.form_submit_button("Giriş Yap"):
                     temiz_k_adi = str(k_adi).replace(" ", "").strip()
                     temiz_k_sifre = str(k_sifre).replace(" ", "").strip()
 
@@ -456,9 +460,9 @@ if not st.session_state['giris_yapildi']:
         with tab_ogrenci:
             with st.form("ogrenci_giris_formu"):
                 veli_tel = st.text_input("Veli Telefon Numarası")
-                ogrenci_sifre_input = st.text_input("Öğrenci Şifresi (Örn: adsoyad42.)", type="password")
+                ogrenci_sifre_input = st.text_input("Öğrenci Şifresi", type="password")
                 
-                if st.form_submit_button("Koçluk Paneline Git"):
+                if st.form_submit_button("Giriş Yap"):
                     temiz_tel = str(veli_tel).replace(" ", "").strip()
                     temiz_sifre = str(ogrenci_sifre_input).replace(" ", "").strip().lower()
                     
@@ -490,7 +494,7 @@ if not st.session_state['giris_yapildi']:
                 yeni_kadi = st.text_input("Kullanıcı Adı Seçin (Boşluksuz)")
                 yeni_sifre = st.text_input("Şifre Belirleyin", type="password")
                 
-                if st.form_submit_button("Hesap Oluştur"):
+                if st.form_submit_button("Kayıt Ol"):
                     if yeni_ad and yeni_kadi and yeni_sifre:
                         kontrol = supabase.table("ogretmenler").select("*").eq("kullanici_adi", yeni_kadi).execute()
                         if len(kontrol.data) > 0:
