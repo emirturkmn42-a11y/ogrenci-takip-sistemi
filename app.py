@@ -160,8 +160,19 @@ if 'ad_soyad' not in st.session_state:
     st.session_state['ad_soyad'] = None
 
 if not st.session_state['giris_yapildi']:
+    import base64
+    import streamlit.components.v1 as components
+
+    # Görselleri HTML slider'ın içine güvenle gömebilmek için dönüştürücü fonksiyon
+    def get_img_str(file_path):
+        try:
+            with open(file_path, "rb") as f:
+                return f"data:image/png;base64,{base64.b64encode(f.read()).decode()}"
+        except:
+            return "https://via.placeholder.com/800x450/f8fafc/94a3b8.png?text=Gorsel+Bekleniyor"
+
     # ==========================================
-    # 🌐 MODERN STARTUP WEB SİTESİ & VİTRİN
+    # 🌐 MODERN STARTUP WEB SİTESİ & OTOMATİK SLIDER
     # ==========================================
     st.markdown("""
     <style>
@@ -171,36 +182,40 @@ if not st.session_state['giris_yapildi']:
     }
     header {visibility: hidden;}
     
-    /* Sağ form kutusu */
+    /* Sağ form kutusu - Lüks ve Dolgun Tasarım */
     [data-testid="stForm"] {
         background-color: #ffffff !important;
         border: 1px solid #e2e8f0 !important;
-        border-radius: 16px;
-        padding: 25px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.06);
     }
-    .stTextInput input { border-radius: 8px; }
-    .stTextInput input:focus { border: 2px solid #d4af37 !important; }
+    .stTextInput input { 
+        border-radius: 10px; 
+        padding: 12px; 
+        font-weight: 600; 
+        background-color: #f8fafc !important;
+    }
+    .stTextInput input:focus { 
+        border: 2px solid #d4af37 !important; 
+        background-color: #ffffff !important;
+    }
     
     [data-testid="stFormSubmitButton"] button {
         background: #1e293b !important;
         color: #ffffff !important;
-        font-weight: 600 !important;
-        border-radius: 8px !important;
+        font-weight: 800 !important;
+        font-size: 16px !important;
+        border-radius: 10px !important;
         width: 100% !important;
+        padding: 12px !important;
         transition: 0.3s;
+        margin-top: 15px;
     }
     [data-testid="stFormSubmitButton"] button:hover {
         background: #d4af37 !important;
-        color: #1e293b !important;
-    }
-    
-    /* Vitrin Sekmeleri */
-    .stTabs [data-baseweb="tab-list"] {
-        background-color: #ffffff;
-        border-radius: 12px;
-        padding: 5px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(212, 175, 55, 0.3);
     }
     </style>
     """, unsafe_allow_html=True)
@@ -208,58 +223,182 @@ if not st.session_state['giris_yapildi']:
     st.write("<br>", unsafe_allow_html=True)
 
     # İki Kolonlu Düzen (Sol %60 Vitrin, Sağ %40 Giriş)
-    col_tanitim, col_bosluk, col_giris = st.columns([1.5, 0.1, 1])
+    col_tanitim, col_bosluk, col_giris = st.columns([1.6, 0.1, 1])
 
     with col_tanitim:
-        st.markdown("<h1 style='font-size: 2.8rem; color: #0f172a; line-height: 1.2; font-weight: 800; margin-bottom: 10px;'>Eğitimde <span style='color: #d4af37;'>Yeni Nesil</span> Koçluk Deneyimi</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='font-size: 1.1rem; color: #64748b; margin-bottom: 25px;'>Öğrenci takibi, haftalık programlama ve veli iletişimini tek bir merkezden profesyonelce yönetin.</p>", unsafe_allow_html=True)
+        # --- LOGO ALANI ---
+        try:
+            st.image("yenı_logo.png", width=220)
+        except:
+            pass # Logo yüklenene kadar boş geçer, hata vermez.
+
+        st.markdown("<h1 style='font-size: 3.2rem; color: #0f172a; line-height: 1.1; font-weight: 900; margin-top: 10px; margin-bottom: 15px;'>Eğitimde <span style='color: #d4af37;'>Yeni Nesil</span> Koçluk Deneyimi</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size: 1.25rem; color: #475569; font-weight: 600; margin-bottom: 35px;'>Öğrenci takibi, detaylı analizler ve şeffaf veli iletişimini tek bir merkezden, kusursuz bir dijital mimariyle yönetin.</p>", unsafe_allow_html=True)
         
-        # SİSTEM VİTRİNİ (Sekmeli Yapı)
-        ozellikler = st.tabs(["📅 Program", "📊 Analiz", "📚 Kaynak", "📝 Ödev", "👨‍👩‍👧 Veli"])
+        # --- SİSTEM VİTRİNİ (OTOMATİK KAYAN HTML SLIDER) ---
+        carousel_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+        <style>
+        .slider-container {{
+            position: relative;
+            width: 100%;
+            height: 520px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+        }}
+        .slide {{
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            opacity: 0;
+            transition: opacity 0.6s ease-in-out;
+            display: flex;
+            flex-direction: column;
+        }}
+        .slide.active {{ opacity: 1; z-index: 10; }}
         
-        with ozellikler[0]:
-            st.markdown("#### 🎯 Kişiselleştirilmiş Haftalık Planlar")
-            st.caption("Öğrencilerinizin hedeflerine uygun, detaylı ve esnek çalışma programları oluşturun.")
-            try:
-                st.image("calısma_programı.png", use_container_width=True)
-            except:
-                st.info("Görsel bekleniyor: calısma_programı.png")
+        /* Görselin duracağı üst kısım */
+        .img-wrapper {{
+            width: 100%;
+            height: 60%;
+            background-color: #f8fafc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid #f1f5f9;
+        }}
+        .img-wrapper img {{
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Görselin hiçbir yeri kesilmesin diye contain kullanıldı */
+            padding-top: 15px;
+        }}
+        
+        /* Yazıların duracağı alt kısım (Kalın, belirgin ve büyük) */
+        .text-wrapper {{
+            height: 40%;
+            padding: 25px 35px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }}
+        h3 {{
+            margin: 0 0 12px 0;
+            color: #b45309;
+            font-size: 26px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: 900;
+        }}
+        p {{
+            margin: 0;
+            color: #334155;
+            font-size: 17px;
+            line-height: 1.6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: 600;
+        }}
+        
+        /* Alttaki şık ilerleme çubuğu (2.5 saniyede dolar) */
+        .progress-bar {{
+            position: absolute;
+            bottom: 0; left: 0;
+            height: 6px;
+            background-color: #d4af37;
+            width: 0%;
+            transition: width 2.5s linear;
+            z-index: 20;
+        }}
+        </style>
+        </head>
+        <body>
+        
+        <div class="slider-container" id="slider">
+            <!-- Slayt 1 -->
+            <div class="slide active">
+                <div class="img-wrapper"><img src="{get_img_str('calısma_programı.png')}"></div>
+                <div class="text-wrapper">
+                    <h3>📅 Kişiselleştirilmiş Haftalık Planlar</h3>
+                    <p>Öğrencilerinizin hedeflerine ve seviyelerine en uygun, tamamen esnek ve detaylandırılmış çalışma programları oluşturun. Süreci dakikası dakikasına profesyonelce yönetin.</p>
+                </div>
+            </div>
+            <!-- Slayt 2 -->
+            <div class="slide">
+                <div class="img-wrapper"><img src="{get_img_str('deneme_analız.png')}"></div>
+                <div class="text-wrapper">
+                    <h3>📈 Gelişmiş Net ve Deneme Analizi</h3>
+                    <p>YKS ve LGS deneme sonuçlarını derinlemesine analiz edin. Öğrencinin net artış grafiklerini inceleyerek eksik konuları nokta atışı tespit edin ve strateji geliştirin.</p>
+                </div>
+            </div>
+            <!-- Slayt 3 -->
+            <div class="slide">
+                <div class="img-wrapper"><img src="{get_img_str('odev_takıp.png')}"></div>
+                <div class="text-wrapper">
+                    <h3>✅ Akıllı Ödev Kontrol Mekanizması</h3>
+                    <p>Verdiğiniz ödevlerin yapılıp yapılmadığını ve yüzde kaç oranında tamamlandığını tek bir ekrandan anlık olarak izleyin. Disiplini ve öğrenci sorumluluğunu artırın.</p>
+                </div>
+            </div>
+            <!-- Slayt 4 -->
+            <div class="slide">
+                <div class="img-wrapper"><img src="{get_img_str('kaynak_yonetımı.png')}"></div>
+                <div class="text-wrapper">
+                    <h3>📚 Dijital Kaynak ve Kitap Yönetimi</h3>
+                    <p>Öğrencilerin çözdüğü soru bankalarını ve fasikülleri sisteme tanımlayın. Hangi kitaptan kaç sayfa çözüldüğünü takip ederek kaynak israfının kesinlikle önüne geçin.</p>
+                </div>
+            </div>
+            <!-- Slayt 5 -->
+            <div class="slide">
+                <div class="img-wrapper"><img src="{get_img_str('velı_bılgılendırme.png')}"></div>
+                <div class="text-wrapper">
+                    <h3>👨‍👩‍👧 Şeffaf Veli Bilgilendirme Portalı</h3>
+                    <p>Velileriniz, kendilerine özel şifrelerle sisteme girerek çocuklarının gelişimini anlık olarak izlesin. Veli toplantılarını dijitalleştirerek kurumsal prestijinizi zirveye taşıyın.</p>
+                </div>
+            </div>
+            
+            <div class="progress-bar" id="progress"></div>
+        </div>
+
+        <script>
+            const slides = document.querySelectorAll('.slide');
+            const progress = document.getElementById('progress');
+            let currentIndex = 0;
+            
+            function showNextSlide() {{
+                slides[currentIndex].classList.remove('active');
+                currentIndex = (currentIndex + 1) % slides.length;
+                slides[currentIndex].classList.add('active');
                 
-        with ozellikler[1]:
-            st.markdown("#### 📈 Gelişmiş Deneme ve Net Analizi")
-            st.caption("YKS ve LGS deneme sonuçlarını detaylı grafiklerle takip edin, eksik konuları nokta atışı tespit edin.")
-            try:
-                st.image("deneme_analız.png", use_container_width=True)
-            except:
-                st.info("Görsel bekleniyor: deneme_analız.png")
-                
-        with ozellikler[2]:
-            st.markdown("#### 📚 Dijital Kütüphane ve Kaynak Yönetimi")
-            st.caption("Öğrencilerin çözdüğü soru bankalarını ve fasikülleri sisteme ekleyin, sayfa sayfa ilerlemelerini planlayın.")
-            try:
-                st.image("kaynak_yonetımı.png", use_container_width=True)
-            except:
-                st.info("Görsel bekleniyor: kaynak_yonetımı.png")
-                
-        with ozellikler[3]:
-            st.markdown("#### ✅ Akıllı Ödev Kontrol Sistemi")
-            st.caption("Verilen görevlerin ve ödevlerin tamamlanma durumunu tek ekrandan yönetin, başarı oranını ölçün.")
-            try:
-                st.image("odev_takıp.png", use_container_width=True)
-            except:
-                st.info("Görsel bekleniyor: odev_takıp.png")
-                
-        with ozellikler[4]:
-            st.markdown("#### 🤝 Şeffaf Veli Portalı")
-            st.caption("Velilerin çocuklarının gelişimini, ödevlerini ve deneme analizlerini kendi ekranlarından anlık olarak izlemesini sağlayın.")
-            try:
-                st.image("velı_bılgılendırme.png", use_container_width=True)
-            except:
-                st.info("Görsel bekleniyor: velı_bılgılendırme.png")
+                // İlerleme çubuğunu sıfırla ve tekrar başlat
+                progress.style.transition = 'none';
+                progress.style.width = '0%';
+                setTimeout(() => {{
+                    progress.style.transition = 'width 2.5s linear';
+                    progress.style.width = '100%';
+                }}, 50);
+            }}
+            
+            // Sayfa yüklendiğinde çubuğu başlat
+            setTimeout(() => {{
+                progress.style.width = '100%';
+            }}, 50);
+            
+            // Her 2.5 Saniyede Bir Slaytı Değiştir
+            setInterval(showNextSlide, 2500);
+        </script>
+        </body>
+        </html>
+        """
+        components.html(carousel_html, height=540)
+
 
     with col_giris:
-        # SAĞ TARAF: GİRİŞ VE KAYIT PANELİ
-        st.markdown("<h3 style='color: #1e293b; text-align: center; margin-bottom: 20px;'>Sisteme Giriş</h3>", unsafe_allow_html=True)
+        # --- SAĞ TARAF: GİRİŞ VE KAYIT PANELİ ---
+        st.markdown("<h2 style='color: #1e293b; text-align: center; margin-bottom: 25px; font-weight: 800;'>Sisteme Giriş</h2>", unsafe_allow_html=True)
         
         tab_ogretmen, tab_ogrenci, tab_kayit = st.tabs(["👨‍🏫 Öğretmen", "🎓 Öğrenci/Veli", "✨ Kayıt Ol"])
 
