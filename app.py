@@ -161,7 +161,7 @@ if 'ad_soyad' not in st.session_state:
 
 if not st.session_state['giris_yapildi']:
     # ==========================================
-    # 🌐 MODERN STARTUP WEB SİTESİ (NATIVE STREAMLIT)
+    # 🌐 MODERN STARTUP WEB SİTESİ & VİTRİN
     # ==========================================
     st.markdown("""
     <style>
@@ -171,7 +171,7 @@ if not st.session_state['giris_yapildi']:
     }
     header {visibility: hidden;}
     
-    /* Sağ taraftaki giriş formunun zarif tasarımı */
+    /* Sağ form kutusu */
     [data-testid="stForm"] {
         background-color: #ffffff !important;
         border: 1px solid #e2e8f0 !important;
@@ -179,12 +179,9 @@ if not st.session_state['giris_yapildi']:
         padding: 25px;
         box-shadow: 0 10px 25px rgba(0,0,0,0.05);
     }
-    .stTextInput input {
-        border-radius: 8px;
-    }
-    .stTextInput input:focus {
-        border: 2px solid #d4af37 !important;
-    }
+    .stTextInput input { border-radius: 8px; }
+    .stTextInput input:focus { border: 2px solid #d4af37 !important; }
+    
     [data-testid="stFormSubmitButton"] button {
         background: #1e293b !important;
         color: #ffffff !important;
@@ -197,41 +194,72 @@ if not st.session_state['giris_yapildi']:
         background: #d4af37 !important;
         color: #1e293b !important;
     }
+    
+    /* Vitrin Sekmeleri */
+    .stTabs [data-baseweb="tab-list"] {
+        background-color: #ffffff;
+        border-radius: 12px;
+        padding: 5px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    }
     </style>
     """, unsafe_allow_html=True)
 
     st.write("<br>", unsafe_allow_html=True)
 
-    # SAĞ VE SOL KOLON (Sol %60, Sağ %40 yer kaplar)
+    # İki Kolonlu Düzen (Sol %60 Vitrin, Sağ %40 Giriş)
     col_tanitim, col_bosluk, col_giris = st.columns([1.5, 0.1, 1])
 
     with col_tanitim:
-        # --- SOL TARAF: SİSTEM TANITIMI VE GÖRSELLER ---
-        st.markdown("<h1 style='font-size: 3rem; color: #0f172a; line-height: 1.1; font-weight: 800; margin-bottom: 10px;'>Eğitimde <span style='color: #d4af37;'>Yeni Nesil</span><br>Koçluk Deneyimi</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='font-size: 1.1rem; color: #64748b; margin-bottom: 25px;'>Öğrenci takibi, haftalık programlama ve veli iletişimini tek bir merkezden, profesyonelce yönetin.</p>", unsafe_allow_html=True)
+        st.markdown("<h1 style='font-size: 2.8rem; color: #0f172a; line-height: 1.2; font-weight: 800; margin-bottom: 10px;'>Eğitimde <span style='color: #d4af37;'>Yeni Nesil</span> Koçluk Deneyimi</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size: 1.1rem; color: #64748b; margin-bottom: 25px;'>Öğrenci takibi, haftalık programlama ve veli iletişimini tek bir merkezden profesyonelce yönetin.</p>", unsafe_allow_html=True)
         
-        # Özellikler (Streamlit'in kendi renkli mesaj kutularıyla, asla bozulmaz)
-        st.markdown("### 🚀 Sistemde Neler Var?")
-        f1, f2 = st.columns(2)
-        with f1:
-            st.success("**📊 Gelişim Analizi**\n\nÖğrencilerin deneme netlerini ve ilerlemelerini detaylı grafiklerle takip edin.")
-            st.info("**📅 Haftalık Program**\n\nKişiselleştirilmiş çalışma programları hazırlayın ve anında öğrenciye iletin.")
-        with f2:
-            st.warning("**👥 Şeffaf Veli Portalı**\n\nVeliler, çocuklarının durumunu kendi şifreleriyle anlık olarak görebilir.")
-            st.error("**🔒 Güvenli Altyapı**\n\nHer öğretmenin verisi tamamen kendine özeldir ve başkası tarafından görülemez.")
-
-        st.write("---")
+        # SİSTEM VİTRİNİ (Sekmeli Yapı)
+        ozellikler = st.tabs(["📅 Program", "📊 Analiz", "📚 Kaynak", "📝 Ödev", "👨‍👩‍👧 Veli"])
         
-        # Örnek bir Gösterge Paneli Önizlemesi (Görsel Katkı)
-        st.markdown("#### 📈 Panelden Örnek Görünümler")
-        m1, m2, m3 = st.columns(3)
-        m1.metric(label="Bu Hafta Çözülen Soru", value="1,250", delta="Hedefin Üzerinde", delta_color="normal")
-        m2.metric(label="TYT Net Ortalaması", value="75.5", delta="+3.2 Net Artış", delta_color="normal")
-        m3.metric(label="Tamamlanan Görev", value="%85", delta="Harika İlerleme", delta_color="normal")
+        with ozellikler[0]:
+            st.markdown("#### 🎯 Kişiselleştirilmiş Haftalık Planlar")
+            st.caption("Öğrencilerinizin hedeflerine uygun, detaylı ve esnek çalışma programları oluşturun.")
+            try:
+                st.image("calısma_programı.png", use_container_width=True)
+            except:
+                st.info("Görsel bekleniyor: calısma_programı.png")
+                
+        with ozellikler[1]:
+            st.markdown("#### 📈 Gelişmiş Deneme ve Net Analizi")
+            st.caption("YKS ve LGS deneme sonuçlarını detaylı grafiklerle takip edin, eksik konuları nokta atışı tespit edin.")
+            try:
+                st.image("deneme_analız.png", use_container_width=True)
+            except:
+                st.info("Görsel bekleniyor: deneme_analız.png")
+                
+        with ozellikler[2]:
+            st.markdown("#### 📚 Dijital Kütüphane ve Kaynak Yönetimi")
+            st.caption("Öğrencilerin çözdüğü soru bankalarını ve fasikülleri sisteme ekleyin, sayfa sayfa ilerlemelerini planlayın.")
+            try:
+                st.image("kaynak_yonetımı.png", use_container_width=True)
+            except:
+                st.info("Görsel bekleniyor: kaynak_yonetımı.png")
+                
+        with ozellikler[3]:
+            st.markdown("#### ✅ Akıllı Ödev Kontrol Sistemi")
+            st.caption("Verilen görevlerin ve ödevlerin tamamlanma durumunu tek ekrandan yönetin, başarı oranını ölçün.")
+            try:
+                st.image("odev_takıp.png", use_container_width=True)
+            except:
+                st.info("Görsel bekleniyor: odev_takıp.png")
+                
+        with ozellikler[4]:
+            st.markdown("#### 🤝 Şeffaf Veli Portalı")
+            st.caption("Velilerin çocuklarının gelişimini, ödevlerini ve deneme analizlerini kendi ekranlarından anlık olarak izlemesini sağlayın.")
+            try:
+                st.image("velı_bılgılendırme.png", use_container_width=True)
+            except:
+                st.info("Görsel bekleniyor: velı_bılgılendırme.png")
 
     with col_giris:
-        # --- SAĞ TARAF: GİRİŞ VE KAYIT PANELİ ---
-        st.markdown("<h3 style='color: #1e293b; text-align: center;'>Sisteme Giriş</h3>", unsafe_allow_html=True)
+        # SAĞ TARAF: GİRİŞ VE KAYIT PANELİ
+        st.markdown("<h3 style='color: #1e293b; text-align: center; margin-bottom: 20px;'>Sisteme Giriş</h3>", unsafe_allow_html=True)
         
         tab_ogretmen, tab_ogrenci, tab_kayit = st.tabs(["👨‍🏫 Öğretmen", "🎓 Öğrenci/Veli", "✨ Kayıt Ol"])
 
@@ -312,7 +340,7 @@ if not st.session_state['giris_yapildi']:
                             }
                             try:
                                 supabase.table("ogretmenler").insert(yeni_data).execute()
-                                st.success("✅ Talebiniz alındı! Emir Hoca onayından sonra giriş yapabilirsiniz.")
+                                st.success("✅ Talebiniz alındı! Yönetici onayından sonra giriş yapabilirsiniz.")
                             except Exception as e:
                                 st.error(f"Hata: {e}")
                     else:
