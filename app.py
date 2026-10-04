@@ -161,94 +161,136 @@ if 'ad_soyad' not in st.session_state:
 
 if not st.session_state['giris_yapildi']:
     # ==========================================
-    # 💎 FERAH, AYDINLIK & LÜKS SAAS PORTAL TASARIMI
+    # 🌐 MODERN STARTUP WEB SİTESİ (LANDING PAGE) TASARIMI
     # ==========================================
     st.markdown("""
     <style>
+    /* Site Arka Planı - Tamamen Ferah */
     .stApp {
-        background-color: #f8fafc;
-        background-image: linear-gradient(135deg, #fdfbfb 0%, #f1f5f9 100%);
+        background-color: #fafbfc;
+        background-image: radial-gradient(circle at top right, #fef3c7 0%, transparent 40%), 
+                          radial-gradient(circle at bottom left, #e0e7ff 0%, transparent 40%);
         color: #1e293b;
     }
     header {visibility: hidden;}
+    footer {visibility: hidden;}
 
-    /* Form Kutusu - Ferah Beyaz Tasarım */
+    /* Form Kutusu - Apple/Stripe Tarzı Zarif Gölgeli Beyaz Kutu */
     [data-testid="stForm"] {
-        background-color: rgba(255, 255, 255, 0.95) !important;
-        border: 2px solid #d4af37 !important;
-        border-radius: 16px;
-        padding: 30px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.06);
-    }
-    .stTextInput input {
         background-color: #ffffff !important;
+        border: 1px solid #f1f5f9 !important;
+        border-radius: 24px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0,0,0,0.05);
+    }
+    
+    /* Input Alanları - Pürüzsüz ve Yuvarlak */
+    .stTextInput input {
+        background-color: #f8fafc !important;
         color: #1e293b !important;
-        border: 1.5px solid #cbd5e1 !important;
-        border-radius: 8px;
-        font-weight: bold;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-weight: 500;
+        transition: all 0.2s ease;
     }
     .stTextInput input:focus {
-        border: 2px solid #d4af37 !important;
-        box-shadow: 0 0 8px rgba(212, 175, 55, 0.3) !important;
+        border-color: #d4af37 !important;
+        background-color: #ffffff !important;
+        box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1) !important;
     }
-    .stTextInput p {
-        color: #334155 !important;
-        font-size: 14px;
-        font-weight: 700;
+    
+    /* Sekmeler (Tabs) - Modern Buton Görünümü */
+    .stTabs [data-baseweb="tab-list"] {
+        background-color: #f1f5f9;
+        border-radius: 14px;
+        padding: 6px;
+        gap: 4px;
     }
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 10px;
+        padding: 8px 16px;
+        color: #64748b;
+        font-weight: 600;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #ffffff !important;
+        color: #1e293b !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    /* Giriş Butonu */
     [data-testid="stFormSubmitButton"] button {
-        background: linear-gradient(90deg, #d4af37, #f1c40f) !important;
-        color: #101725 !important;
-        font-weight: 900 !important;
+        background: #1e293b !important;
+        color: #ffffff !important;
+        font-weight: 600 !important;
         font-size: 16px !important;
-        border-radius: 8px !important;
+        border-radius: 12px !important;
         width: 100% !important;
-        padding: 10px !important;
+        padding: 12px !important;
         border: none !important;
-        box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+        transition: 0.3s !important;
+        margin-top: 15px;
     }
     [data-testid="stFormSubmitButton"] button:hover {
-        transform: scale(1.02);
+        background: #d4af37 !important;
+        color: #1e293b !important;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
     }
     </style>
     """, unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Logo / Karikatür (Kolonlar yardımıyla boyutu küçültüldü ve ortalandı)
-    col_l1, col_l2, col_l3 = st.columns([1, 2, 1])
-    with col_l2:
-        # Karikatür için daraltılmış alt kolonlar (Dev gibi olmasını engeller)
-        c_resim1, c_resim2, c_resim3 = st.columns([1.5, 2, 1.5])
-        with c_resim2:
-            try:
-                st.image("karikatur.png", use_container_width=True)
-            except:
-                st.markdown("<div style='text-align: center; font-size: 50px;'>👑</div>", unsafe_allow_html=True)
-                
-        st.markdown("<h1 style='text-align: center; color: #b8860b; margin-top: 10px; margin-bottom: 0px; letter-spacing: 2px;'>EMİR HOCA</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: #64748b; font-size: 15px; margin-top: 2px; margin-bottom: 15px;'>Dijital Eğitim Koçluğu & Öğrenci Takip Portalı</p>", unsafe_allow_html=True)
+    # Yukarıdan biraz boşluk
+    st.write("<br><br>", unsafe_allow_html=True)
 
-        # 🌟 Yeni ve Şık Dinamik Karşılama Kartı
+    # İki Kolonlu Web Sitesi Düzeni (Sol: Tanıtım, Sağ: Giriş Paneli)
+    col_sol, col_bosluk, col_sag = st.columns([1.1, 0.1, 1])
+
+    with col_sol:
+        st.write("<br><br>", unsafe_allow_html=True)
+        # Marka ve Slogan Alanı
         st.markdown("""
-        <div style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1px solid #fde047; padding: 12px 18px; border-radius: 12px; text-align: center; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-            <span style="color: #b45309; font-weight: 700; font-size: 15px;">👋 Değerli Eğitimci / Ziyaretçi, Hoş Geldiniz!</span><br>
-            <span style="color: #78350f; font-size: 13px;">Başarı yolculuğunuzu yönetmek için lütfen panelinizi seçin.</span>
+        <div style="padding-right: 30px;">
+            <div style="display: inline-block; background-color: #fef3c7; color: #b45309; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 700; margin-bottom: 20px;">
+                🚀 Yeni Sürüm Yayında!
+            </div>
+            <h1 style="font-size: 3.5rem; color: #0f172a; line-height: 1.1; font-weight: 800; margin-bottom: 20px;">
+                Eğitimde <span style="color: #d4af37;">Yeni Nesil</span><br>Koçluk Deneyimi
+            </h1>
+            <p style="font-size: 1.2rem; color: #64748b; line-height: 1.6; margin-bottom: 35px;">
+                Öğrencilerinizin gelişimini anlık takip edin, velilerle şeffaf iletişim kurun ve haftalık programlarınızı tek bir dijital merkezden profesyonelce yönetin.
+            </p>
+            
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="background: #e0f2fe; padding: 10px; border-radius: 10px; font-size: 20px;">🎯</div>
+                    <div style="font-size: 1.1rem; color: #334155;"><b>Kişiselleştirilmiş Programlar:</b> Hedefe özel planlama</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="background: #fce7f3; padding: 10px; border-radius: 10px; font-size: 20px;">📊</div>
+                    <div style="font-size: 1.1rem; color: #334155;"><b>Detaylı Analizler:</b> Net gelişim grafikleri</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="background: #dcfce7; padding: 10px; border-radius: 10px; font-size: 20px;">📱</div>
+                    <div style="font-size: 1.1rem; color: #334155;"><b>Veli Portalı:</b> Öğrenciye dair her şey elinizin altında</div>
+                </div>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
-    # 3 Ana Giriş / Seçim Sekmesi
-    tab_ogretmen, tab_ogrenci, tab_kayit = st.tabs(["👨‍🏫 Öğretmen Girişi", "🎓 Öğrenci / Veli Girişi", "🚀 Yeni Eğitmen Kaydı"])
+    with col_sag:
+        # Sağ Taraftaki Şık Giriş Formları
+        st.markdown("<h3 style='color: #1e293b; margin-bottom: 20px; font-weight: 700;'>Sisteme Giriş Yapın</h3>", unsafe_allow_html=True)
+        
+        tab_ogretmen, tab_ogrenci, tab_kayit = st.tabs(["👨‍🏫 Öğretmen", "🎓 Öğrenci/Veli", "✨ Kayıt Ol"])
 
-    with tab_ogretmen:
-        c1, c2, c3 = st.columns([1, 1.2, 1])
-        with c2:
+        with tab_ogretmen:
             with st.form("ogretmen_giris_formu"):
-                st.markdown("<h4 style='text-align: center; color: #b8860b;'>Öğretmen Paneli Girişi</h4>", unsafe_allow_html=True)
                 k_adi = st.text_input("Kullanıcı Adı")
                 k_sifre = st.text_input("Şifre", type="password")
                 
-                if st.form_submit_button("Sisteme Güvenli Giriş", type="primary"):
+                if st.form_submit_button("Panelime Git"):
                     temiz_k_adi = str(k_adi).replace(" ", "").strip()
                     temiz_k_sifre = str(k_sifre).replace(" ", "").strip()
 
@@ -268,15 +310,12 @@ if not st.session_state['giris_yapildi']:
                     else:
                         st.error("❌ Hatalı kullanıcı adı veya şifre!")
 
-    with tab_ogrenci:
-        c1, c2, c3 = st.columns([1, 1.2, 1])
-        with c2:
+        with tab_ogrenci:
             with st.form("ogrenci_giris_formu"):
-                st.markdown("<h4 style='text-align: center; color: #b8860b;'>Öğrenci / Veli Girişi</h4>", unsafe_allow_html=True)
-                veli_tel = st.text_input("Kullanıcı Adı")
-                ogrenci_sifre_input = st.text_input("Öğrenci Şifresi", type="password")
+                veli_tel = st.text_input("Veli Telefon Numarası")
+                ogrenci_sifre_input = st.text_input("Öğrenci Şifresi (Örn: adsoyad42.)", type="password")
                 
-                if st.form_submit_button("Koçluk Paneline Git", type="primary"):
+                if st.form_submit_button("Koçluk Paneline Git"):
                     temiz_tel = str(veli_tel).replace(" ", "").strip()
                     temiz_sifre = str(ogrenci_sifre_input).replace(" ", "").strip().lower()
                     
@@ -301,16 +340,13 @@ if not st.session_state['giris_yapildi']:
                     else:
                         st.error("❌ Bilgiler eşleşmedi. Telefonu veya şifreyi kontrol edin.")
 
-    with tab_kayit:
-        c1, c2, c3 = st.columns([1, 1.2, 1])
-        with c2:
+        with tab_kayit:
             with st.form("kayit_formu"):
-                st.markdown("<h4 style='text-align: center; color: #b8860b;'>Yeni Eğitmen Kaydı</h4>", unsafe_allow_html=True)
                 yeni_ad = st.text_input("Adınız Soyadınız")
                 yeni_kadi = st.text_input("Kullanıcı Adı Seçin (Boşluksuz)")
                 yeni_sifre = st.text_input("Şifre Belirleyin", type="password")
                 
-                if st.form_submit_button("Kayıt Talebi Oluştur", type="primary"):
+                if st.form_submit_button("Hesap Oluştur"):
                     if yeni_ad and yeni_kadi and yeni_sifre:
                         kontrol = supabase.table("ogretmenler").select("*").eq("kullanici_adi", yeni_kadi).execute()
                         if len(kontrol.data) > 0:
@@ -325,7 +361,7 @@ if not st.session_state['giris_yapildi']:
                             }
                             try:
                                 supabase.table("ogretmenler").insert(yeni_data).execute()
-                                st.success("✅ Talebiniz alındı! Emir Hoca onayından sonra giriş yapabilirsiniz.")
+                                st.success("✅ Talebiniz alındı! Yönetici onayından sonra giriş yapabilirsiniz.")
                             except Exception as e:
                                 st.error(f"Hata: {e}")
                     else:
