@@ -172,70 +172,95 @@ if not st.session_state['giris_yapildi']:
             return "https://via.placeholder.com/800x450/f8fafc/94a3b8.png?text=Gorsel+Bekleniyor"
 
     # ==========================================
-    # 🌐 MODERN STARTUP WEB SİTESİ & OTOMATİK SLIDER
+    # 💎 ULTRA MODERN STARTUP WEB SİTESİ & OTOMATİK SLIDER
     # ==========================================
     st.markdown("""
     <style>
+    /* Genel Arka Plan: Çok hafif ve ferah bir gradient */
     .stApp {
-        background-color: #f8fafc;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
         color: #1e293b;
     }
     header {visibility: hidden;}
     
-    /* Sağ form kutusu - Lüks ve Dolgun Tasarım */
+    /* Sağ form kutusu - Cam Efekti (Glassmorphism) ve Lüks Tasarım */
     [data-testid="stForm"] {
-        background-color: #ffffff !important;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 20px;
-        padding: 30px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.06);
+        background-color: rgba(255, 255, 255, 0.85) !important;
+        backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.6) !important;
+        border-radius: 24px;
+        padding: 35px;
+        box-shadow: 0 25px 50px rgba(0,0,0,0.05);
     }
+    
+    /* Input Alanları - Pürüzsüz hatlar */
     .stTextInput input { 
-        border-radius: 10px; 
-        padding: 12px; 
+        border-radius: 12px; 
+        padding: 14px; 
         font-weight: 600; 
-        background-color: #f8fafc !important;
+        background-color: #f1f5f9 !important;
+        border: 1px solid #e2e8f0 !important;
+        transition: all 0.3s ease;
     }
     .stTextInput input:focus { 
         border: 2px solid #d4af37 !important; 
         background-color: #ffffff !important;
+        box-shadow: 0 0 10px rgba(212, 175, 55, 0.15) !important;
     }
     
+    /* Giriş Butonu - Modern ve Güçlü */
     [data-testid="stFormSubmitButton"] button {
-        background: #1e293b !important;
+        background: linear-gradient(90deg, #1e293b, #0f172a) !important;
         color: #ffffff !important;
         font-weight: 800 !important;
         font-size: 16px !important;
-        border-radius: 10px !important;
+        border-radius: 12px !important;
         width: 100% !important;
-        padding: 12px !important;
+        padding: 14px !important;
+        border: none !important;
         transition: 0.3s;
-        margin-top: 15px;
+        margin-top: 20px;
+        box-shadow: 0 4px 15px rgba(15, 23, 42, 0.2);
     }
     [data-testid="stFormSubmitButton"] button:hover {
-        background: #d4af37 !important;
+        background: linear-gradient(90deg, #d4af37, #b45309) !important;
         transform: translateY(-3px);
-        box-shadow: 0 10px 20px rgba(212, 175, 55, 0.3);
+        box-shadow: 0 12px 25px rgba(212, 175, 55, 0.3);
+    }
+    
+    /* Sekmeler (Tabs) - Daha yuvarlak ve estetik */
+    .stTabs [data-baseweb="tab-list"] {
+        background-color: transparent;
+        gap: 8px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background-color: rgba(255,255,255,0.5);
+        border-radius: 10px;
+        padding: 10px 20px;
+        color: #64748b;
+        font-weight: 700;
+        border: 1px solid transparent;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #ffffff !important;
+        color: #1e293b !important;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.03);
     }
     </style>
     """, unsafe_allow_html=True)
 
     st.write("<br>", unsafe_allow_html=True)
 
-    # İki Kolonlu Düzen (Sol %60 Vitrin, Sağ %40 Giriş)
-    col_tanitim, col_bosluk, col_giris = st.columns([1.6, 0.1, 1])
+    # İki Kolonlu Düzen (Sol %55 Vitrin, Sağ %45 Giriş)
+    col_tanitim, col_bosluk, col_giris = st.columns([1.4, 0.1, 1.1])
 
     with col_tanitim:
-        # --- LOGO ALANI ---
-        try:
-            st.image("yenı_logo.png", width=220)
-        except:
-            pass # Logo yüklenene kadar boş geçer, hata vermez.
-
-        st.markdown("<h1 style='font-size: 3.2rem; color: #0f172a; line-height: 1.1; font-weight: 900; margin-top: 10px; margin-bottom: 15px;'>Eğitimde <span style='color: #d4af37;'>Yeni Nesil</span> Koçluk Deneyimi</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='font-size: 1.25rem; color: #475569; font-weight: 600; margin-bottom: 35px;'>Öğrenci takibi, detaylı analizler ve şeffaf veli iletişimini tek bir merkezden, kusursuz bir dijital mimariyle yönetin.</p>", unsafe_allow_html=True)
+        st.write("<br>", unsafe_allow_html=True)
+        st.markdown("<h1 style='font-size: 3.5rem; color: #0f172a; line-height: 1.1; font-weight: 900; margin-bottom: 15px; letter-spacing: -1px;'>Eğitimde <span style='color: #d4af37;'>Yeni Nesil</span> Koçluk Deneyimi</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size: 1.2rem; color: #475569; font-weight: 500; margin-bottom: 40px; line-height: 1.6;'>Öğrenci takibi, detaylı deneme analizleri ve şeffaf veli iletişimini tek bir merkezden, kusursuz bir dijital mimariyle yönetin.</p>", unsafe_allow_html=True)
         
-        # --- SİSTEM VİTRİNİ (OTOMATİK KAYAN HTML SLIDER) ---
+        # --- SİSTEM VİTRİNİ (YAVAŞLATILMIŞ & MODERNİZE EDİLMİŞ SLIDER) ---
         carousel_html = f"""
         <!DOCTYPE html>
         <html>
@@ -244,74 +269,73 @@ if not st.session_state['giris_yapildi']:
         .slider-container {{
             position: relative;
             width: 100%;
-            height: 520px;
-            border-radius: 20px;
+            height: 480px;
+            border-radius: 24px;
             overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.08);
             background-color: #ffffff;
-            border: 1px solid #e2e8f0;
+            border: 1px solid rgba(226, 232, 240, 0.8);
         }}
         .slide {{
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
             opacity: 0;
-            transition: opacity 0.6s ease-in-out;
+            transition: opacity 0.8s ease-in-out;
             display: flex;
             flex-direction: column;
         }}
         .slide.active {{ opacity: 1; z-index: 10; }}
         
-        /* Görselin duracağı üst kısım */
         .img-wrapper {{
             width: 100%;
             height: 60%;
-            background-color: #f8fafc;
+            background: radial-gradient(circle, #ffffff 0%, #f1f5f9 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            border-bottom: 1px solid #f1f5f9;
         }}
         .img-wrapper img {{
-            width: 100%;
-            height: 100%;
-            object-fit: contain; /* Görselin hiçbir yeri kesilmesin diye contain kullanıldı */
-            padding-top: 15px;
+            width: 90%;
+            height: 90%;
+            object-fit: contain;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            margin-top: 15px;
         }}
         
-        /* Yazıların duracağı alt kısım (Kalın, belirgin ve büyük) */
         .text-wrapper {{
             height: 40%;
-            padding: 25px 35px;
-            background: white;
+            padding: 30px 40px;
+            background: #ffffff;
             display: flex;
             flex-direction: column;
             justify-content: center;
         }}
         h3 {{
-            margin: 0 0 12px 0;
+            margin: 0 0 10px 0;
             color: #b45309;
-            font-size: 26px;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-weight: 900;
+            font-size: 24px;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-weight: 800;
         }}
         p {{
             margin: 0;
-            color: #334155;
-            font-size: 17px;
+            color: #475569;
+            font-size: 16px;
             line-height: 1.6;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            font-weight: 600;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-weight: 500;
         }}
         
-        /* Alttaki şık ilerleme çubuğu (2.5 saniyede dolar) */
+        /* 3.5 saniyede dolan altın renkli ilerleme çubuğu */
         .progress-bar {{
             position: absolute;
             bottom: 0; left: 0;
             height: 6px;
-            background-color: #d4af37;
+            background: linear-gradient(90deg, #d4af37, #fde047);
             width: 0%;
-            transition: width 2.5s linear;
+            transition: width 3.5s linear;
             z-index: 20;
         }}
         </style>
@@ -319,44 +343,39 @@ if not st.session_state['giris_yapildi']:
         <body>
         
         <div class="slider-container" id="slider">
-            <!-- Slayt 1 -->
             <div class="slide active">
                 <div class="img-wrapper"><img src="{get_img_str('calısma_programı.png')}"></div>
                 <div class="text-wrapper">
                     <h3>📅 Kişiselleştirilmiş Haftalık Planlar</h3>
-                    <p>Öğrencilerinizin hedeflerine ve seviyelerine en uygun, tamamen esnek ve detaylandırılmış çalışma programları oluşturun. Süreci dakikası dakikasına profesyonelce yönetin.</p>
+                    <p>Öğrencilerinizin hedeflerine ve seviyelerine en uygun, tamamen esnek çalışma programları oluşturun. Süreci dakikası dakikasına profesyonelce yönetin.</p>
                 </div>
             </div>
-            <!-- Slayt 2 -->
             <div class="slide">
                 <div class="img-wrapper"><img src="{get_img_str('deneme_analız.png')}"></div>
                 <div class="text-wrapper">
                     <h3>📈 Gelişmiş Net ve Deneme Analizi</h3>
-                    <p>YKS ve LGS deneme sonuçlarını derinlemesine analiz edin. Öğrencinin net artış grafiklerini inceleyerek eksik konuları nokta atışı tespit edin ve strateji geliştirin.</p>
+                    <p>YKS ve LGS deneme sonuçlarını derinlemesine analiz edin. Öğrencinin net artış grafiklerini inceleyerek eksik konuları nokta atışı tespit edin.</p>
                 </div>
             </div>
-            <!-- Slayt 3 -->
             <div class="slide">
                 <div class="img-wrapper"><img src="{get_img_str('odev_takıp.png')}"></div>
                 <div class="text-wrapper">
                     <h3>✅ Akıllı Ödev Kontrol Mekanizması</h3>
-                    <p>Verdiğiniz ödevlerin yapılıp yapılmadığını ve yüzde kaç oranında tamamlandığını tek bir ekrandan anlık olarak izleyin. Disiplini ve öğrenci sorumluluğunu artırın.</p>
+                    <p>Verdiğiniz ödevlerin yapılıp yapılmadığını ve yüzde kaç oranında tamamlandığını tek bir ekrandan anlık olarak izleyerek öğrenci sorumluluğunu artırın.</p>
                 </div>
             </div>
-            <!-- Slayt 4 -->
             <div class="slide">
                 <div class="img-wrapper"><img src="{get_img_str('kaynak_yonetımı.png')}"></div>
                 <div class="text-wrapper">
                     <h3>📚 Dijital Kaynak ve Kitap Yönetimi</h3>
-                    <p>Öğrencilerin çözdüğü soru bankalarını ve fasikülleri sisteme tanımlayın. Hangi kitaptan kaç sayfa çözüldüğünü takip ederek kaynak israfının kesinlikle önüne geçin.</p>
+                    <p>Öğrencilerin çözdüğü soru bankalarını sisteme tanımlayın. Hangi kitaptan kaç sayfa çözüldüğünü takip ederek kaynak israfının önüne geçin.</p>
                 </div>
             </div>
-            <!-- Slayt 5 -->
             <div class="slide">
                 <div class="img-wrapper"><img src="{get_img_str('velı_bılgılendırme.png')}"></div>
                 <div class="text-wrapper">
                     <h3>👨‍👩‍👧 Şeffaf Veli Bilgilendirme Portalı</h3>
-                    <p>Velileriniz, kendilerine özel şifrelerle sisteme girerek çocuklarının gelişimini anlık olarak izlesin. Veli toplantılarını dijitalleştirerek kurumsal prestijinizi zirveye taşıyın.</p>
+                    <p>Velileriniz, kendilerine özel şifrelerle sisteme girerek çocuklarının gelişimini anlık izlesin. Kurumsal prestijinizi zirveye taşıyın.</p>
                 </div>
             </div>
             
@@ -373,34 +392,41 @@ if not st.session_state['giris_yapildi']:
                 currentIndex = (currentIndex + 1) % slides.length;
                 slides[currentIndex].classList.add('active');
                 
-                // İlerleme çubuğunu sıfırla ve tekrar başlat
+                // İlerleme çubuğunu sıfırla ve 3.5 saniye için tekrar başlat
                 progress.style.transition = 'none';
                 progress.style.width = '0%';
                 setTimeout(() => {{
-                    progress.style.transition = 'width 2.5s linear';
+                    progress.style.transition = 'width 3.5s linear';
                     progress.style.width = '100%';
                 }}, 50);
             }}
             
-            // Sayfa yüklendiğinde çubuğu başlat
             setTimeout(() => {{
                 progress.style.width = '100%';
             }}, 50);
             
-            // Her 2.5 Saniyede Bir Slaytı Değiştir
-            setInterval(showNextSlide, 2500);
+            // Her 3.5 Saniyede Bir Slaytı Değiştir (3500ms)
+            setInterval(showNextSlide, 3500);
         </script>
         </body>
         </html>
         """
-        components.html(carousel_html, height=540)
+        components.html(carousel_html, height=500)
 
 
     with col_giris:
-        # --- SAĞ TARAF: GİRİŞ VE KAYIT PANELİ ---
-        st.markdown("<h2 style='color: #1e293b; text-align: center; margin-bottom: 25px; font-weight: 800;'>Sisteme Giriş</h2>", unsafe_allow_html=True)
+        # --- LOGO BURAYA TAŞINDI (Sağ Taraf, Formun Üstü, Ortalanmış) ---
+        c_logo_sol, c_logo_orta, c_logo_sag = st.columns([1, 2, 1])
+        with c_logo_orta:
+            try:
+                st.image("yenı_logo.png", use_container_width=True)
+            except:
+                st.markdown("<div style='text-align: center; font-size: 50px;'>👑</div>", unsafe_allow_html=True)
         
-        tab_ogretmen, tab_ogrenci, tab_kayit = st.tabs(["👨‍🏫 Öğretmen", "🎓 Öğrenci/Veli", "✨ Kayıt Ol"])
+        st.markdown("<h3 style='color: #1e293b; text-align: center; margin-bottom: 25px; font-weight: 800; letter-spacing: -0.5px;'>Sisteme Giriş Yapın</h3>", unsafe_allow_html=True)
+        
+        # --- GİRİŞ VE KAYIT PANELİ ---
+        tab_ogretmen, tab_ogrenci, tab_kayit = st.tabs(["👨‍🏫 Öğretmen", "🎓 Öğrenci / Veli", "✨ Kayıt Ol"])
 
         with tab_ogretmen:
             with st.form("ogretmen_giris_formu"):
@@ -459,7 +485,7 @@ if not st.session_state['giris_yapildi']:
 
         with tab_kayit:
             with st.form("kayit_formu"):
-                st.info("Kurumumuza katılmak için kayıt talebi oluşturun.")
+                st.info("Sistemimize katılmak için kayıt talebinizi oluşturun.")
                 yeni_ad = st.text_input("Adınız Soyadınız")
                 yeni_kadi = st.text_input("Kullanıcı Adı Seçin (Boşluksuz)")
                 yeni_sifre = st.text_input("Şifre Belirleyin", type="password")
@@ -880,7 +906,7 @@ st.markdown("---")
 secenekler = list(SINAV_MÜFREDATI.keys())
 
 # --- 5. SOL MENÜ ---
-logo_yolu = "logo.jpg"
+logo_yolu = "yenı_logo.png"
 if os.path.exists(logo_yolu):
     c1, c2, c3 = st.sidebar.columns([1, 50, 1]) 
     with c2: st.image(Image.open(logo_yolu), use_container_width=True)
