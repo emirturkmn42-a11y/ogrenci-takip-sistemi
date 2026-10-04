@@ -161,127 +161,77 @@ if 'ad_soyad' not in st.session_state:
 
 if not st.session_state['giris_yapildi']:
     # ==========================================
-    # 🌐 MODERN STARTUP WEB SİTESİ (LANDING PAGE) TASARIMI
+    # 🌐 MODERN STARTUP WEB SİTESİ (NATIVE STREAMLIT)
     # ==========================================
     st.markdown("""
     <style>
-    /* Site Arka Planı - Tamamen Ferah */
     .stApp {
-        background-color: #fafbfc;
-        background-image: radial-gradient(circle at top right, #fef3c7 0%, transparent 40%), 
-                          radial-gradient(circle at bottom left, #e0e7ff 0%, transparent 40%);
+        background-color: #f8fafc;
         color: #1e293b;
     }
     header {visibility: hidden;}
-    footer {visibility: hidden;}
-
-    /* Form Kutusu - Apple/Stripe Tarzı Zarif Gölgeli Beyaz Kutu */
+    
+    /* Sağ taraftaki giriş formunun zarif tasarımı */
     [data-testid="stForm"] {
         background-color: #ffffff !important;
-        border: 1px solid #f1f5f9 !important;
-        border-radius: 24px;
-        padding: 40px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0,0,0,0.05);
-    }
-    
-    /* Input Alanları - Pürüzsüz ve Yuvarlak */
-    .stTextInput input {
-        background-color: #f8fafc !important;
-        color: #1e293b !important;
         border: 1px solid #e2e8f0 !important;
-        border-radius: 12px;
-        padding: 12px 16px;
-        font-weight: 500;
-        transition: all 0.2s ease;
+        border-radius: 16px;
+        padding: 25px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    }
+    .stTextInput input {
+        border-radius: 8px;
     }
     .stTextInput input:focus {
-        border-color: #d4af37 !important;
-        background-color: #ffffff !important;
-        box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.1) !important;
+        border: 2px solid #d4af37 !important;
     }
-    
-    /* Sekmeler (Tabs) - Modern Buton Görünümü */
-    .stTabs [data-baseweb="tab-list"] {
-        background-color: #f1f5f9;
-        border-radius: 14px;
-        padding: 6px;
-        gap: 4px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        border-radius: 10px;
-        padding: 8px 16px;
-        color: #64748b;
-        font-weight: 600;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #ffffff !important;
-        color: #1e293b !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-
-    /* Giriş Butonu */
     [data-testid="stFormSubmitButton"] button {
         background: #1e293b !important;
         color: #ffffff !important;
         font-weight: 600 !important;
-        font-size: 16px !important;
-        border-radius: 12px !important;
+        border-radius: 8px !important;
         width: 100% !important;
-        padding: 12px !important;
-        border: none !important;
-        transition: 0.3s !important;
-        margin-top: 15px;
+        transition: 0.3s;
     }
     [data-testid="stFormSubmitButton"] button:hover {
         background: #d4af37 !important;
         color: #1e293b !important;
-        transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
     }
     </style>
     """, unsafe_allow_html=True)
 
-    # Yukarıdan biraz boşluk
-    st.write("<br><br>", unsafe_allow_html=True)
+    st.write("<br>", unsafe_allow_html=True)
 
-    # İki Kolonlu Web Sitesi Düzeni (Sol: Tanıtım, Sağ: Giriş Paneli)
-    col_sol, col_bosluk, col_sag = st.columns([1.1, 0.1, 1])
+    # SAĞ VE SOL KOLON (Sol %60, Sağ %40 yer kaplar)
+    col_tanitim, col_bosluk, col_giris = st.columns([1.5, 0.1, 1])
 
-    with col_sol:
-        st.write("<br><br>", unsafe_allow_html=True)
-        # Marka ve Slogan Alanı
-        st.markdown("""
-        <div style="padding-right: 30px;">
-            <div style="display: inline-block; background-color: #fef3c7; color: #b45309; padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 700; margin-bottom: 20px;">
-                🚀 Yeni Sürüm Yayında!
-            </div>
-            <h1 style="font-size: 3.5rem; color: #0f172a; line-height: 1.1; font-weight: 800; margin-bottom: 20px;">
-                Eğitimde <span style="color: #d4af37;">Yeni Nesil</span><br>Koçluk Deneyimi
-            </h1>
-            <p style="font-size: 1.2rem; color: #64748b; line-height: 1.6; margin-bottom: 35px;">
-                Öğrencilerinizin gelişimini anlık takip edin, velilerle şeffaf iletişim kurun ve haftalık programlarınızı tek bir dijital merkezden profesyonelce yönetin.
-            </p>
-            
-            <div style="display: flex; flex-direction: column; gap: 15px;">
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <div style="background: #e0f2fe; padding: 10px; border-radius: 10px; font-size: 20px;">🎯</div>
-                    <div style="font-size: 1.1rem; color: #334155;"><b>Kişiselleştirilmiş Programlar:</b> Hedefe özel planlama</div>
-                </div>
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <div style="background: #fce7f3; padding: 10px; border-radius: 10px; font-size: 20px;">📊</div>
-                    <div style="font-size: 1.1rem; color: #334155;"><b>Detaylı Analizler:</b> Net gelişim grafikleri</div>
-                </div>
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <div style="background: #dcfce7; padding: 10px; border-radius: 10px; font-size: 20px;">📱</div>
-                    <div style="font-size: 1.1rem; color: #334155;"><b>Veli Portalı:</b> Öğrenciye dair her şey elinizin altında</div>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+    with col_tanitim:
+        # --- SOL TARAF: SİSTEM TANITIMI VE GÖRSELLER ---
+        st.markdown("<h1 style='font-size: 3rem; color: #0f172a; line-height: 1.1; font-weight: 800; margin-bottom: 10px;'>Eğitimde <span style='color: #d4af37;'>Yeni Nesil</span><br>Koçluk Deneyimi</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size: 1.1rem; color: #64748b; margin-bottom: 25px;'>Öğrenci takibi, haftalık programlama ve veli iletişimini tek bir merkezden, profesyonelce yönetin.</p>", unsafe_allow_html=True)
+        
+        # Özellikler (Streamlit'in kendi renkli mesaj kutularıyla, asla bozulmaz)
+        st.markdown("### 🚀 Sistemde Neler Var?")
+        f1, f2 = st.columns(2)
+        with f1:
+            st.success("**📊 Gelişim Analizi**\n\nÖğrencilerin deneme netlerini ve ilerlemelerini detaylı grafiklerle takip edin.")
+            st.info("**📅 Haftalık Program**\n\nKişiselleştirilmiş çalışma programları hazırlayın ve anında öğrenciye iletin.")
+        with f2:
+            st.warning("**👥 Şeffaf Veli Portalı**\n\nVeliler, çocuklarının durumunu kendi şifreleriyle anlık olarak görebilir.")
+            st.error("**🔒 Güvenli Altyapı**\n\nHer öğretmenin verisi tamamen kendine özeldir ve başkası tarafından görülemez.")
 
-    with col_sag:
-        # Sağ Taraftaki Şık Giriş Formları
-        st.markdown("<h3 style='color: #1e293b; margin-bottom: 20px; font-weight: 700;'>Sisteme Giriş Yapın</h3>", unsafe_allow_html=True)
+        st.write("---")
+        
+        # Örnek bir Gösterge Paneli Önizlemesi (Görsel Katkı)
+        st.markdown("#### 📈 Panelden Örnek Görünümler")
+        m1, m2, m3 = st.columns(3)
+        m1.metric(label="Bu Hafta Çözülen Soru", value="1,250", delta="Hedefin Üzerinde", delta_color="normal")
+        m2.metric(label="TYT Net Ortalaması", value="75.5", delta="+3.2 Net Artış", delta_color="normal")
+        m3.metric(label="Tamamlanan Görev", value="%85", delta="Harika İlerleme", delta_color="normal")
+
+    with col_giris:
+        # --- SAĞ TARAF: GİRİŞ VE KAYIT PANELİ ---
+        st.markdown("<h3 style='color: #1e293b; text-align: center;'>Sisteme Giriş</h3>", unsafe_allow_html=True)
         
         tab_ogretmen, tab_ogrenci, tab_kayit = st.tabs(["👨‍🏫 Öğretmen", "🎓 Öğrenci/Veli", "✨ Kayıt Ol"])
 
@@ -342,6 +292,7 @@ if not st.session_state['giris_yapildi']:
 
         with tab_kayit:
             with st.form("kayit_formu"):
+                st.info("Kurumumuza katılmak için kayıt talebi oluşturun.")
                 yeni_ad = st.text_input("Adınız Soyadınız")
                 yeni_kadi = st.text_input("Kullanıcı Adı Seçin (Boşluksuz)")
                 yeni_sifre = st.text_input("Şifre Belirleyin", type="password")
@@ -361,7 +312,7 @@ if not st.session_state['giris_yapildi']:
                             }
                             try:
                                 supabase.table("ogretmenler").insert(yeni_data).execute()
-                                st.success("✅ Talebiniz alındı! Yönetici onayından sonra giriş yapabilirsiniz.")
+                                st.success("✅ Talebiniz alındı! Emir Hoca onayından sonra giriş yapabilirsiniz.")
                             except Exception as e:
                                 st.error(f"Hata: {e}")
                     else:
