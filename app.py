@@ -177,7 +177,7 @@ if not st.session_state['giris_yapildi']:
         bg_css = "background: #0f172a;"
 
     # ==========================================
-    # 🌌 BİREBİR KOPYA LÜKS TASARIM + SEKMELER
+    # 🌌 SEKMELİ & KUSURSUZ LÜKS GLASSMORPHISM
     # ==========================================
     st.markdown(f"""
     <style>
@@ -190,50 +190,45 @@ if not st.session_state['giris_yapildi']:
     }}
     header {{visibility: hidden;}}
     
-    /* 2. SAĞ KOLONU DEV BİR CAM KUTU YAP (Her şeyi sarar) */
-    div[data-testid="column"]:last-of-type,
-    div[data-testid="column"]:nth-child(3) {{
+    /* 2. ANA FORM KUTUSU (Buzlu Cam ve İnce Altın Çerçeve) */
+    [data-testid="stForm"] {{
         background: rgba(18, 18, 20, 0.5) !important;
         backdrop-filter: blur(24px) !important;
         -webkit-backdrop-filter: blur(24px) !important;
         border: 1px solid rgba(220, 180, 100, 0.25) !important;
         border-radius: 16px !important;
-        padding: 40px !important;
+        padding: 30px 40px !important;
         box-shadow: 0 30px 60px rgba(0,0,0,0.8) !important;
-        margin-top: 30px;
+        margin-top: 20px;
     }}
     
-    /* Form sınırlarını tamamen yok et (sekme içine gömülmesi için) */
-    [data-testid="stForm"] {{
-        border: none !important;
-        background: transparent !important;
-        padding: 0 !important;
-        box-shadow: none !important;
-    }}
-    
-    /* 3. SEKMELER (TABS) - Sade, modern, ortalanmış */
+    /* 3. SEKMELER (TABS) - Kutunun içine entegre şık tasarım */
     .stTabs [data-baseweb="tab-list"] {{
-        background-color: transparent !important;
-        border-bottom: 1px solid rgba(255,255,255,0.1) !important;
-        gap: 15px !important;
+        background-color: rgba(0, 0, 0, 0.3) !important;
+        border-radius: 10px !important;
+        padding: 4px !important;
+        gap: 4px !important;
+        border: 1px solid rgba(255,255,255,0.05) !important;
         margin-bottom: 25px !important;
         justify-content: center;
     }}
     .stTabs [data-baseweb="tab"] {{
         background-color: transparent !important;
         color: #94a3b8 !important;
+        border-radius: 6px !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        padding: 8px 12px !important;
         border: none !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-        padding-bottom: 10px !important;
     }}
     .stTabs [aria-selected="true"] {{
-        color: #d4af37 !important;
-        border-bottom: 2px solid #d4af37 !important;
+        background: linear-gradient(90deg, #f0c36b, #c2913e) !important;
+        color: #111111 !important;
         font-weight: 700 !important;
+        box-shadow: 0 4px 10px rgba(194, 145, 62, 0.3) !important;
     }}
     
-    /* 4. İNPUT ALANLARI (Birebir İkonlu Kopya) */
+    /* 4. İNPUT ALANLARI (İkonlar ve Dikey Çizgi) */
     div[data-baseweb="input"] {{
         background-color: rgba(20, 20, 25, 0.4) !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -242,9 +237,8 @@ if not st.session_state['giris_yapildi']:
         height: 52px;
         margin-bottom: 5px;
     }}
-    /* INPUT İÇİN BEYAZ KUTU HATASINI GİDEREN KOD */
     div[data-baseweb="input"] input {{
-        background-color: transparent !important; 
+        background-color: transparent !important;
         color: #ffffff !important;
         padding-left: 55px !important;
         font-size: 14px !important;
@@ -259,8 +253,8 @@ if not st.session_state['giris_yapildi']:
         box-shadow: 0 0 0 1px rgba(220, 180, 100, 0.6) !important;
     }}
 
-    /* Kullanıcı İkonu (Tüm formlardaki 1. ve genel inputlar için) */
-    div[data-testid="stTextInput"] div[data-baseweb="input"]::before {{
+    /* Kullanıcı / Ad Soyad İkonu */
+    div[data-testid="stTextInput"]:nth-of-type(1) div[data-baseweb="input"]::before {{
         content: '';
         position: absolute;
         left: 0; top: 0; bottom: 0; width: 45px;
@@ -270,9 +264,21 @@ if not st.session_state['giris_yapildi']:
         opacity: 0.8;
     }}
     
-    /* Kilit İkonu (Tüm formlardaki EN SON (şifre) inputları için) */
-    div[data-testid="stTextInput"]:last-of-type div[data-baseweb="input"]::before {{
+    /* Kilit / Şifre İkonu */
+    div[data-testid="stTextInput"]:nth-of-type(2) div[data-baseweb="input"]::before,
+    div[data-testid="stTextInput"]:nth-of-type(3) div[data-baseweb="input"]::before {{
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0; width: 45px;
         background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>') no-repeat center center;
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        z-index: 10;
+        opacity: 0.8;
+    }}
+    
+    /* Göz İkonu Rengi */
+    div[data-baseweb="input"] svg {{
+        color: #a0aab5 !important;
     }}
 
     /* 5. ALTIN GRADIENT GİRİŞ BUTONU */
@@ -294,54 +300,54 @@ if not st.session_state['giris_yapildi']:
         box-shadow: 0 8px 20px rgba(194, 145, 62, 0.4) !important;
     }}
     
-    /* 6. SADECE BENİ HATIRLA (Şifremi unuttum silindi) */
+    /* 6. CHECKBOX */
     [data-testid="stCheckbox"] label {{ color: #94a3b8 !important; font-size: 13px !important; }}
     [data-testid="stCheckbox"] div[role="checkbox"] {{ border-color: #c2913e !important; background: transparent; }}
     [data-testid="stCheckbox"] div[role="checkbox"][aria-checked="true"] {{ background: #c2913e !important; border-color: #c2913e !important; }}
     
-    /* Göz İkonu Rengi */
-    div[data-baseweb="input"] svg {{ color: #a0aab5 !important; }}
-    
-    /* Boşluk Temizliği */
     [data-testid="stVerticalBlock"] > div {{ padding-bottom: 0 !important; }}
     </style>
     """, unsafe_allow_html=True)
 
     st.write("<br><br>", unsafe_allow_html=True)
 
-    # İki Kolonlu Düzen
+    # İki Kolonlu Düzen (Sol Tanıtım, Sağ Form)
     col_tanitim, col_bosluk, col_giris = st.columns([1.3, 0.2, 1.1])
 
     with col_tanitim:
         st.write("<br><br>", unsafe_allow_html=True)
+        # 1. Logo
         try:
             st.image("yenı_logo.png", width=240)
         except:
             st.markdown("<h1 style='color: #d4af37;'>EMİR HOCA</h1>", unsafe_allow_html=True)
             
+        # 2. Slogan ve Açıklama
         st.markdown("<h2 style='font-size: 3.2rem; color: #ffffff; font-weight: 800; line-height: 1.1; margin-top: 25px;'>Daha iyi bir gelecek<br>için, <span style='color: #d4af37;'>doğru takip.</span></h2>", unsafe_allow_html=True)
         st.markdown("<p style='font-size: 1.15rem; color: #cbd5e1; margin-top: 20px; line-height: 1.7; max-width: 85%; font-weight: 400;'>Öğrencilerinizin gelişimini adım adım takip edin. Hedeflerine ulaşmaları için onlarla birlikte, profesyonelce ilerleyin.</p>", unsafe_allow_html=True)
 
     with col_giris:
-        # --- ORTALANMIŞ BÜYÜK HOŞ GELDİNİZ ---
+        # --- BÜYÜTÜLMÜŞ VE ORTALANMIŞ HOŞ GELDİNİZ ---
         st.markdown("""
-        <div style='text-align: center; margin-bottom: 25px;'>
-            <h2 style='color: #ffffff; font-weight: 800; font-size: 38px; margin-bottom: 5px; letter-spacing: -1px;'>Hoş Geldiniz</h2>
-            <p style='color: #a0aab5; font-size: 15px; font-weight: 400;'>Hesabınıza giriş yapın</p>
+        <div style='text-align: center; margin-bottom: 20px;'>
+            <h2 style='color: #ffffff; font-weight: 800; font-size: 34px; margin-bottom: 3px; letter-spacing: -0.5px;'>Hoş Geldiniz</h2>
+            <p style='color: #a0aab5; font-size: 14px; font-weight: 400;'>Hesabınıza giriş yapın</p>
         </div>
         """, unsafe_allow_html=True)
-        
-        # --- SEKMELER ---
-        tab_ogretmen, tab_ogrenci, tab_kayit = st.tabs(["Öğretmen", "Öğrenci / Veli", "Kayıt Ol"])
+
+        # --- ÖĞRETMEN / ÖĞRENCİ / KAYIT SEKMELERİ ---
+        tab_ogretmen, tab_ogrenci, tab_kayit = st.tabs(["👨‍🏫 Öğretmen", "🎓 Öğrenci / Veli", "✨ Kayıt Ol"])
 
         with tab_ogretmen:
-            with st.form("form_ogretmen"):
-                # label_visibility="collapsed" başlıkları gizler, tasarım bozulmaz!
-                k_adi = st.text_input("t_kadi", placeholder="Kullanıcı adı / E-posta", label_visibility="collapsed")
-                k_sifre = st.text_input("t_sifre", placeholder="Şifre", type="password", label_visibility="collapsed")
+            with st.form("form_ogretmen_giris"):
+                k_adi = st.text_input("Kullanıcı adı / E-posta", placeholder="Kullanıcı adı / E-posta", label_visibility="collapsed")
+                k_sifre = st.text_input("Şifre", placeholder="Şifre", type="password", label_visibility="collapsed")
                 
-                st.checkbox("Beni hatırla", value=False, key="chk_ogr")
                 submit_btn = st.form_submit_button("Giriş Yap ➔")
+                
+                c1, c2 = st.columns([1, 1])
+                with c1:
+                    st.checkbox("Beni hatırla", value=False, key="chk_ogr")
                 
                 if submit_btn:
                     temiz_k_adi = str(k_adi).replace(" ", "").strip()
@@ -362,12 +368,15 @@ if not st.session_state['giris_yapildi']:
                         st.error("❌ Hatalı kullanıcı adı veya şifre!")
 
         with tab_ogrenci:
-            with st.form("form_ogrenci"):
-                veli_tel = st.text_input("s_tel", placeholder="Kayıtlı Telefon Numarası", label_visibility="collapsed")
-                ogrenci_sifre_input = st.text_input("s_sifre", placeholder="Şifre", type="password", label_visibility="collapsed")
+            with st.form("form_ogrenci_giris"):
+                veli_tel = st.text_input("Kayıtlı Telefon Numarası", placeholder="Kayıtlı Telefon Numarası", label_visibility="collapsed")
+                ogrenci_sifre_input = st.text_input("Şifre", placeholder="Şifre", type="password", label_visibility="collapsed")
                 
-                st.checkbox("Beni hatırla", value=False, key="chk_stu")
                 submit_btn = st.form_submit_button("Giriş Yap ➔")
+                
+                c1, c2 = st.columns([1, 1])
+                with c1:
+                    st.checkbox("Beni hatırla", value=False, key="chk_stu")
                 
                 if submit_btn:
                     temiz_tel = str(veli_tel).replace(" ", "").strip()
@@ -391,10 +400,10 @@ if not st.session_state['giris_yapildi']:
                         st.error("❌ Bilgiler eşleşmedi. Telefonu veya şifreyi kontrol edin.")
 
         with tab_kayit:
-            with st.form("form_kayit"):
-                yeni_ad = st.text_input("r_ad", placeholder="Ad Soyad", label_visibility="collapsed")
-                yeni_kadi = st.text_input("r_kadi", placeholder="Kullanıcı Adı Belirleyin", label_visibility="collapsed")
-                yeni_sifre = st.text_input("r_sifre", placeholder="Şifre Belirleyin", type="password", label_visibility="collapsed")
+            with st.form("form_kayit_ol"):
+                yeni_ad = st.text_input("Ad Soyad", placeholder="Ad Soyad", label_visibility="collapsed")
+                yeni_kadi = st.text_input("Kullanıcı Adı Belirleyin", placeholder="Kullanıcı Adı Belirleyin", label_visibility="collapsed")
+                yeni_sifre = st.text_input("Şifre Belirleyin", placeholder="Şifre Belirleyin", type="password", label_visibility="collapsed")
                 
                 submit_btn = st.form_submit_button("Kayıt Ol ➔")
                 
@@ -419,9 +428,9 @@ if not st.session_state['giris_yapildi']:
                     else:
                         st.warning("Lütfen tüm alanları doldurun.")
                         
-        # En Alta Logo İmzası (Tasarımı Bütünleştirir)
+        # Footer Çizgisi ve Logo Metni
         st.markdown("""
-        <div style='margin-top: 35px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 25px; display: flex; flex-direction: column; align-items: center;'>
+        <div style='margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px; display: flex; flex-direction: column; align-items: center;'>
             <div style='display: flex; align-items: center; gap: 15px;'>
                 <div style='height: 1px; width: 30px; background-color: rgba(255,255,255,0.2);'></div>
                 <span style='color: #ffffff; font-weight: 700; font-size: 15px; letter-spacing: 1px;'>EMİR HOCA</span>
