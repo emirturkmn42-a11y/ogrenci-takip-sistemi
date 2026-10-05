@@ -177,11 +177,11 @@ if not st.session_state['giris_yapildi']:
         bg_css = "background: #0f172a;"
 
     # ==========================================
-    # 🌌 BİREBİR KOPYA: LÜKS GLASSMORPHISM TASARIMI
+    # 🌌 PREMIUM GLASSMORPHISM & ORTALANMIŞ BAŞLIK
     # ==========================================
     st.markdown(f"""
     <style>
-    /* 1. Tam Ekran Arka Plan */
+    /* Tam Ekran Arka Plan */
     .stApp {{
         {bg_css}
         background-size: cover;
@@ -190,101 +190,102 @@ if not st.session_state['giris_yapildi']:
     }}
     header {{visibility: hidden;}}
     
-    /* 2. ANA FORM KUTUSU (Buzlu Cam ve İnce Altın Çerçeve) */
-    [data-testid="stForm"] {{
-        background: rgba(18, 18, 20, 0.5) !important;
+    /* Sağ Kolon - Buzlu Cam Kutusu (Her şeyi sarar) */
+    div[data-testid="column"]:nth-of-type(3) {{
+        background: rgba(18, 18, 22, 0.65) !important;
         backdrop-filter: blur(24px) !important;
         -webkit-backdrop-filter: blur(24px) !important;
-        border: 1px solid rgba(220, 180, 100, 0.25) !important;
-        border-radius: 16px !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 20px !important;
         padding: 40px !important;
-        box-shadow: 0 30px 60px rgba(0,0,0,0.8) !important;
-        margin-top: 50px;
+        box-shadow: 0 30px 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05) !important;
+        margin-top: 10px;
     }}
     
-    /* 3. İNPUT ALANLARI (İkonlar ve Dikey Çizgi İçin Özel Ayarlar) */
-    div[data-baseweb="input"] {{
-        background-color: rgba(20, 20, 25, 0.4) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 8px !important;
-        position: relative;
-        height: 52px;
+    /* Form Sınırlarını Yok Et */
+    [data-testid="stForm"] {{
+        border: none !important;
+        background: transparent !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+    }}
+    
+    /* İNPUT (Metin Giriş) ALANLARI */
+    .stTextInput input {{ 
+        border-radius: 8px !important; 
+        padding: 14px 16px !important; 
+        color: #ffffff !important;
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        font-weight: 500 !important;
+        font-size: 15px !important;
+    }}
+    .stTextInput input:focus {{ 
+        border: 1px solid #d4af37 !important; 
+        background-color: rgba(0, 0, 0, 0.5) !important;
+        box-shadow: 0 0 12px rgba(212, 175, 55, 0.2) !important;
+    }}
+    .stTextInput p {{
+        color: #cbd5e1 !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
         margin-bottom: 5px;
     }}
-    div[data-baseweb="input"] input {{
-        color: #ffffff !important;
-        padding-left: 55px !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
+    
+    /* SEKMELER (TABS) - Kurumsal ve Zarif */
+    .stTabs [data-baseweb="tab-list"] {{
+        background-color: rgba(255, 255, 255, 0.04) !important;
+        border-radius: 10px !important;
+        padding: 5px !important;
+        gap: 5px !important;
+        border: 1px solid rgba(255,255,255,0.03) !important;
+        margin-bottom: 25px !important;
     }}
-    div[data-baseweb="input"] input::placeholder {{
+    .stTabs [data-baseweb="tab"] {{
+        background-color: transparent !important;
         color: #94a3b8 !important;
-        opacity: 0.8 !important;
+        border-radius: 6px !important;
+        font-weight: 600 !important;
+        font-size: 13px !important;
+        letter-spacing: 0.5px !important;
+        padding: 10px 10px !important;
+        border: none !important;
     }}
-    div[data-baseweb="input"]:focus-within {{
-        border-color: rgba(220, 180, 100, 0.6) !important;
-        box-shadow: 0 0 0 1px rgba(220, 180, 100, 0.6) !important;
-    }}
-
-    /* Kullanıcı İkonu (SVG Gömmesi) */
-    div[data-testid="stTextInput"]:nth-of-type(1) div[data-baseweb="input"]::before {{
-        content: '';
-        position: absolute;
-        left: 0; top: 0; bottom: 0; width: 45px;
-        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>') no-repeat center center;
-        border-right: 1px solid rgba(255, 255, 255, 0.1);
-        z-index: 10;
-        opacity: 0.8;
+    .stTabs [aria-selected="true"] {{
+        background: linear-gradient(90deg, #d4af37, #c2913e) !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.25) !important;
     }}
     
-    /* Kilit İkonu (SVG Gömmesi) */
-    div[data-testid="stTextInput"]:nth-of-type(2) div[data-baseweb="input"]::before {{
-        content: '';
-        position: absolute;
-        left: 0; top: 0; bottom: 0; width: 45px;
-        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>') no-repeat center center;
-        border-right: 1px solid rgba(255, 255, 255, 0.1);
-        z-index: 10;
-        opacity: 0.8;
-    }}
-    
-    /* Göz İkonu (Şifre gizle/göster) Rengi */
-    div[data-baseweb="input"] svg {{
-        color: #a0aab5 !important;
-    }}
-
-    /* 4. ALTIN GRADIENT GİRİŞ BUTONU */
+    /* GİRİŞ YAP BUTONU - Altın Gradient */
     [data-testid="stFormSubmitButton"] button {{
-        background: linear-gradient(90deg, #f0c36b, #c2913e) !important;
+        background: linear-gradient(90deg, #d4af37, #fde047) !important;
         color: #111111 !important;
-        font-weight: 700 !important;
+        font-weight: 800 !important;
         font-size: 16px !important;
         border-radius: 8px !important;
-        height: 52px !important;
         width: 100% !important;
+        padding: 12px !important;
         border: none !important;
+        transition: 0.3s !important;
         margin-top: 15px !important;
-        transition: 0.3s;
+        box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3) !important;
     }}
     [data-testid="stFormSubmitButton"] button:hover {{
-        background: linear-gradient(90deg, #fcd581, #d6a451) !important;
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(194, 145, 62, 0.4) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 12px 25px rgba(212, 175, 55, 0.5) !important;
     }}
-    
-    /* 5. CHECKBOX VE LİNKLER */
-    [data-testid="stCheckbox"] label {{ color: #94a3b8 !important; font-size: 13px !important; }}
-    [data-testid="stCheckbox"] div[role="checkbox"] {{ border-color: #c2913e !important; background: transparent; }}
-    [data-testid="stCheckbox"] div[role="checkbox"][aria-checked="true"] {{ background: #c2913e !important; border-color: #c2913e !important; }}
-    
-    /* Streamlit'in Boşluklarını Temizleme */
-    [data-testid="stVerticalBlock"] > div {{ padding-bottom: 0 !important; }}
+
+    /* BENİ HATIRLA - Özel Renk */
+    [data-testid="stCheckbox"] label {{ color: #cbd5e1 !important; font-size: 13px !important; }}
+    [data-testid="stCheckbox"] div[role="checkbox"] {{ background: transparent; border-color: #d4af37 !important; }}
+    [data-testid="stCheckbox"] div[role="checkbox"][aria-checked="true"] {{ background: #d4af37 !important; }}
     </style>
     """, unsafe_allow_html=True)
 
     st.write("<br><br>", unsafe_allow_html=True)
 
-    # İki Kolonlu Düzen (Sol Tanıtım, Sağ Form)
+    # İki Kolonlu Düzen (Sol Tanıtım, Orta Boşluk, Sağ Form)
     col_tanitim, col_bosluk, col_giris = st.columns([1.3, 0.2, 1.1])
 
     with col_tanitim:
@@ -300,67 +301,65 @@ if not st.session_state['giris_yapildi']:
         st.markdown("<p style='font-size: 1.15rem; color: #cbd5e1; margin-top: 20px; line-height: 1.7; max-width: 85%; font-weight: 400;'>Öğrencilerinizin gelişimini adım adım takip edin. Hedeflerine ulaşmaları için onlarla birlikte, profesyonelce ilerleyin.</p>", unsafe_allow_html=True)
 
     with col_giris:
-        # --- BİREBİR KOPYA FORM KUTUSU ---
-        with st.form("giris_formu_birebir"):
-            # Üst Başlıklar
-            st.markdown("<h2 style='color: #ffffff; font-weight: 700; margin-bottom: 3px; font-size: 26px; letter-spacing: -0.5px;'>Hoş Geldiniz</h2>", unsafe_allow_html=True)
-            st.markdown("<p style='color: #a0aab5; font-size: 14px; margin-bottom: 25px; font-weight: 400;'>Hesabınıza giriş yapın</p>", unsafe_allow_html=True)
-            
-            # Input Alanları (Label'lar gizlendi, placeholder ve CSS ikonlar devrede)
-            k_adi = st.text_input("Kullanıcı adı / E-posta", placeholder="Kullanıcı adı / E-posta", label_visibility="collapsed")
-            k_sifre = st.text_input("Şifre", placeholder="Şifre", type="password", label_visibility="collapsed")
-            
-            # Altın Buton
-            submit_btn = st.form_submit_button("Giriş Yap ➔")
-            
-            # Alt Kısım (Beni Hatırla ve Şifremi Unuttum)
-            c1, c2 = st.columns([1, 1])
-            with c1:
+        # --- ORTALANMIŞ VE BÜYÜTÜLMÜŞ BAŞLIK ---
+        st.markdown("""
+        <div style='text-align: center; margin-bottom: 30px;'>
+            <h2 style='color: #ffffff; font-weight: 800; font-size: 38px; margin-bottom: 5px; letter-spacing: -1px;'>Hoş Geldiniz</h2>
+            <p style='color: #94a3b8; font-size: 15px; font-weight: 400;'>Hesabınıza giriş yapın</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # --- SEKMELER (TABS) GERİ DÖNDÜ ---
+        tab_ogretmen, tab_ogrenci, tab_kayit = st.tabs(["ÖĞRETMEN", "ÖĞRENCİ / VELİ", "KAYIT OL"])
+
+        with tab_ogretmen:
+            with st.form("ogretmen_giris_formu"):
+                k_adi = st.text_input("Kullanıcı Adı / E-Posta")
+                k_sifre = st.text_input("Şifre", type="password")
+                
                 st.checkbox("Beni hatırla", value=False)
-            with c2:
-                st.markdown("<div style='text-align:right; margin-top: 10px;'><a href='#' style='color:#94a3b8; font-size:13px; text-decoration:underline;'>Şifremi Unuttum?</a></div>", unsafe_allow_html=True)
-            
-            # Footer Çizgisi ve Logo Metni
-            st.markdown("""
-            <div style='margin-top: 35px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 25px; display: flex; flex-direction: column; align-items: center;'>
-                <div style='display: flex; align-items: center; gap: 15px;'>
-                    <div style='height: 1px; width: 30px; background-color: rgba(255,255,255,0.2);'></div>
-                    <span style='color: #ffffff; font-weight: 700; font-size: 15px; letter-spacing: 1px;'>EMİR HOCA</span>
-                    <div style='height: 1px; width: 30px; background-color: rgba(255,255,255,0.2);'></div>
-                </div>
-                <div style='color: #a0aab5; font-size: 9px; letter-spacing: 2px; margin-top: 4px;'>ÖĞRENCİ TAKİP SİSTEMİ</div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # -- TEK BİR BUTON İLE AKILLI GİRİŞ SORGULAMASI --
-            if submit_btn:
-                temiz_k_adi = str(k_adi).replace(" ", "").strip()
-                temiz_k_sifre = str(k_sifre).replace(" ", "").strip()
+                submit_btn = st.form_submit_button("Giriş Yap ➔")
                 
-                # 1. Önce Öğretmenler Tablosuna Bak
-                ogretmen_sorgu = supabase.table("ogretmenler").select("*").eq("kullanici_adi", temiz_k_adi).eq("sifre", temiz_k_sifre).execute()
-                
-                if len(ogretmen_sorgu.data) > 0:
-                    user_data = ogretmen_sorgu.data[0]
-                    if user_data['onayli']:
-                        st.session_state['giris_yapildi'] = True
-                        st.session_state['rol'] = "ADMIN"
-                        st.session_state['yetki_seviyesi'] = user_data['rol']
-                        st.session_state['aktif_ogretmen_id'] = user_data['id']
-                        st.session_state['ad_soyad'] = user_data['ad_soyad']
-                        st.rerun()
+                if submit_btn:
+                    temiz_k_adi = str(k_adi).replace(" ", "").strip()
+                    temiz_k_sifre = str(k_sifre).replace(" ", "").strip()
+
+                    ogretmen_sorgu = supabase.table("ogretmenler").select("*").eq("kullanici_adi", temiz_k_adi).eq("sifre", temiz_k_sifre).execute()
+                    
+                    if len(ogretmen_sorgu.data) > 0:
+                        user_data = ogretmen_sorgu.data[0]
+                        if user_data['onayli']:
+                            st.session_state['giris_yapildi'] = True
+                            st.session_state['rol'] = "ADMIN"
+                            st.session_state['yetki_seviyesi'] = user_data['rol']
+                            st.session_state['aktif_ogretmen_id'] = user_data['id']
+                            st.session_state['ad_soyad'] = user_data['ad_soyad']
+                            st.rerun()
+                        else:
+                            st.error("⚠️ Hesabınız henüz onaylanmamış.")
                     else:
-                        st.error("⚠️ Hesabınız henüz onaylanmamış.")
-                else:
-                    # 2. Öğretmen Değilse, Öğrenciler Tablosuna Bak (Veli Telefonu ve Şifre)
-                    ogrenci_sorgu = supabase.table("ogrenciler").select("id, ad_soyad, veli_telefon, ogretmen_id").eq("veli_telefon", temiz_k_adi).execute()
+                        st.error("❌ Hatalı kullanıcı adı veya şifre!")
+
+        with tab_ogrenci:
+            with st.form("ogrenci_giris_formu"):
+                veli_tel = st.text_input("Kayıtlı Telefon Numarası")
+                ogrenci_sifre_input = st.text_input("Şifre", type="password")
+                
+                st.checkbox("Beni hatırla", value=False, key="ogr_hatirla")
+                submit_btn = st.form_submit_button("Giriş Yap ➔")
+                
+                if submit_btn:
+                    temiz_tel = str(veli_tel).replace(" ", "").strip()
+                    temiz_sifre = str(ogrenci_sifre_input).replace(" ", "").strip().lower()
+                    
+                    ogrenci_sorgu = supabase.table("ogrenciler").select("id, ad_soyad, veli_telefon, ogretmen_id").eq("veli_telefon", temiz_tel).execute()
                     
                     giris_basarili = False
                     for row in ogrenci_sorgu.data:
                         db_ad_temiz = str(row['ad_soyad']).replace(" ", "").strip().lower()
                         beklenen_sifre = f"{db_ad_temiz}42."
                         
-                        if temiz_k_sifre == beklenen_sifre:
+                        if temiz_sifre == beklenen_sifre:
                             st.session_state['giris_yapildi'] = True
                             st.session_state['rol'] = "OGRENCI"
                             st.session_state['kilitli_ogrenci_id'] = row['id']
@@ -372,7 +371,39 @@ if not st.session_state['giris_yapildi']:
                     if giris_basarili:
                         st.rerun()
                     else:
-                        st.error("❌ Kullanıcı adı veya şifre hatalı!")
+                        st.error("❌ Bilgiler eşleşmedi. Telefonu veya şifreyi kontrol edin.")
+
+        with tab_kayit:
+            with st.form("kayit_formu"):
+                yeni_ad = st.text_input("Ad Soyad")
+                yeni_kadi = st.text_input("Kullanıcı Adı Belirleyin")
+                yeni_sifre = st.text_input("Şifre Belirleyin", type="password")
+                
+                submit_btn = st.form_submit_button("Kayıt Ol ➔")
+                
+                if submit_btn:
+                    if yeni_ad and yeni_kadi and yeni_sifre:
+                        kontrol = supabase.table("ogretmenler").select("*").eq("kullanici_adi", yeni_kadi).execute()
+                        if len(kontrol.data) > 0:
+                            st.error("❌ Bu kullanıcı adı zaten alınmış.")
+                        else:
+                            yeni_data = {
+                                "ad_soyad": yeni_ad,
+                                "kullanici_adi": yeni_kadi,
+                                "sifre": yeni_sifre,
+                                "onayli": False,
+                                "rol": "OGRETMEN"
+                            }
+                            try:
+                                supabase.table("ogretmenler").insert(yeni_data).execute()
+                                st.success("✅ Talebiniz alındı! Onaylandıktan sonra giriş yapabilirsiniz.")
+                            except Exception as e:
+                                st.error(f"Hata: {e}")
+                    else:
+                        st.warning("Lütfen tüm alanları doldurun.")
+                        
+        # En Alta Logo İmzası
+        st.markdown("<hr style='border-color: rgba(255,255,255,0.05); margin-top: 30px; margin-bottom: 10px;'><p style='text-align: center; color: #64748b; font-size: 11px; letter-spacing: 3px; font-weight: 700;'>EMİR HOCA ÖĞRENCİ TAKİP SİSTEMİ</p>", unsafe_allow_html=True)
 
     st.stop()
 # --- GİRİŞ YAPILDIYSA UYGULAMA BURADAN DEVAM EDER ---
