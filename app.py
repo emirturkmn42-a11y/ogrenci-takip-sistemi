@@ -161,283 +161,172 @@ if 'ad_soyad' not in st.session_state:
 
 if not st.session_state['giris_yapildi']:
     import base64
-    import streamlit.components.v1 as components
+    import os
 
-    # Görselleri HTML slider'ın içine güvenle gömebilmek için dönüştürücü fonksiyon
-    def get_img_str(file_path):
+    # Görselleri arka plan olarak atamak için Base64 çevirici
+    def get_base64_of_bin_file(bin_file):
         try:
-            with open(file_path, "rb") as f:
-                return f"data:image/png;base64,{base64.b64encode(f.read()).decode()}"
+            with open(bin_file, 'rb') as f:
+                data = f.read()
+            return base64.b64encode(data).decode()
         except:
-            return "https://via.placeholder.com/800x450/f8fafc/94a3b8.png?text=Gorsel+Bekleniyor"
+            return None
+
+    # Arka plan resmini tanımla (arkaplan.jpg dosyanı klasöre koymalısın)
+    arkaplan_base64 = get_base64_of_bin_file("arkaplan.jpg")
+    
+    # Eğer resim yüklenmediyse şık bir koyu gradient kullan (Yedek)
+    if arkaplan_base64:
+        bg_css = f"background-image: url('data:image/jpeg;base64,{arkaplan_base64}');"
+    else:
+        bg_css = "background: linear-gradient(135deg, #0f172a 0%, #000000 100%);"
 
     # ==========================================
-    # 💎 ULTRA MODERN STARTUP WEB SİTESİ & OTOMATİK SLIDER
+    # 🌌 PREMIUM DARK MODE & GLASSMORPHISM TASARIMI
     # ==========================================
-    st.markdown("""
+    st.markdown(f"""
     <style>
-    /* Genel Arka Plan */
-    .stApp {
-        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-        color: #1e293b;
-    }
-    header {visibility: hidden;}
+    /* Tam Ekran Arka Plan */
+    .stApp {{
+        {bg_css}
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+    }}
+    header {{visibility: hidden;}}
     
-    /* Sağ form kutusu - Cam Efekti (Glassmorphism) */
-    [data-testid="stForm"] {
-        background-color: rgba(255, 255, 255, 0.9) !important;
-        backdrop-filter: blur(12px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.8) !important;
-        border-radius: 24px;
-        padding: 35px;
-        box-shadow: 0 25px 50px rgba(0,0,0,0.05);
-    }
+    /* Sağ taraftaki giriş kutusu - Koyu Buzlu Cam Efekti */
+    [data-testid="stForm"] {{
+        background-color: rgba(15, 15, 15, 0.7) !important;
+        backdrop-filter: blur(16px) !important;
+        -webkit-backdrop-filter: blur(16px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 20px;
+        padding: 40px 30px;
+        box-shadow: 0 30px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
+    }}
     
-    /* Input Alanları */
-    .stTextInput input { 
-        border-radius: 12px; 
+    /* Input (Metin Giriş) Alanları - Koyu ve Şık */
+    .stTextInput input {{ 
+        border-radius: 10px; 
         padding: 14px; 
-        font-weight: 600; 
-        background-color: #f1f5f9 !important;
-        border: 1px solid #e2e8f0 !important;
-        transition: all 0.3s ease;
-    }
-    .stTextInput input:focus { 
-        border: 2px solid #d4af37 !important; 
-        background-color: #ffffff !important;
-        box-shadow: 0 0 10px rgba(212, 175, 55, 0.15) !important;
-    }
-    
-    /* Giriş Butonu - Modern ve Güçlü */
-    [data-testid="stFormSubmitButton"] button {
-        background: linear-gradient(90deg, #1e293b, #0f172a) !important;
         color: #ffffff !important;
+        background-color: rgba(0, 0, 0, 0.4) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        transition: all 0.3s ease;
+    }}
+    .stTextInput input:focus {{ 
+        border: 1px solid #d4af37 !important; 
+        background-color: rgba(0, 0, 0, 0.6) !important;
+        box-shadow: 0 0 15px rgba(212, 175, 55, 0.2) !important;
+    }}
+    .stTextInput p {{
+        color: #94a3b8 !important;
+        font-weight: 500;
+        font-size: 14px;
+    }}
+    
+    /* Altın Gradient Buton */
+    [data-testid="stFormSubmitButton"] button {{
+        background: linear-gradient(90deg, #d4af37, #fde047) !important;
+        color: #000000 !important;
         font-weight: 800 !important;
         font-size: 16px !important;
-        border-radius: 12px !important;
+        border-radius: 10px !important;
         width: 100% !important;
         padding: 14px !important;
         border: none !important;
         transition: 0.3s;
         margin-top: 20px;
-        box-shadow: 0 4px 15px rgba(15, 23, 42, 0.2);
-    }
-    [data-testid="stFormSubmitButton"] button:hover {
-        background: linear-gradient(90deg, #d4af37, #b45309) !important;
-        transform: translateY(-3px);
-        box-shadow: 0 12px 25px rgba(212, 175, 55, 0.3);
-    }
+        box-shadow: 0 10px 20px rgba(212, 175, 55, 0.2);
+    }}
+    [data-testid="stFormSubmitButton"] button:hover {{
+        transform: translateY(-2px);
+        box-shadow: 0 15px 30px rgba(212, 175, 55, 0.4);
+    }}
     
-    /* Sekmeler (Tabs) - Yepyeni, şık ve bütünleşik buton tasarımı */
-    .stTabs [data-baseweb="tab-list"] {
-        background-color: #e2e8f0;
-        border-radius: 14px;
-        padding: 6px;
-        gap: 6px;
-        margin-bottom: 25px;
-    }
-    .stTabs [data-baseweb="tab"] {
+    /* Sekmeler (Tabs) - Koyu Temaya Uygun */
+    .stTabs [data-baseweb="tab-list"] {{
+        background-color: rgba(0,0,0,0.4);
+        border-radius: 12px;
+        padding: 5px;
+        gap: 5px;
+        border: 1px solid rgba(255,255,255,0.05);
+    }}
+    .stTabs [data-baseweb="tab"] {{
         background-color: transparent;
-        border-radius: 10px;
-        padding: 12px 5px;
-        color: #64748b;
-        font-weight: 700;
-        font-size: 15px;
+        color: #94a3b8;
+        border-radius: 8px;
+        font-weight: 600;
+        padding: 10px 15px;
         border: none !important;
-        transition: all 0.3s ease;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #ffffff !important;
-        color: #0f172a !important;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    }
+    }}
+    .stTabs [aria-selected="true"] {{
+        background-color: rgba(212, 175, 55, 0.15) !important;
+        color: #d4af37 !important;
+        border: 1px solid rgba(212, 175, 55, 0.3) !important;
+    }}
+    
+    /* Genel Yazı Renkleri (Hata ve Bilgi Mesajları) */
+    .stMarkdown p {{ color: #e2e8f0; }}
     </style>
     """, unsafe_allow_html=True)
 
-    st.write("<br>", unsafe_allow_html=True)
+    st.write("<br><br>", unsafe_allow_html=True)
 
-    # İki Kolonlu Düzen (Sol %55 Vitrin, Sağ %45 Giriş)
-    col_tanitim, col_bosluk, col_giris = st.columns([1.4, 0.1, 1.1])
+    # İki Kolonlu Düzen (Sol Tanıtım, Sağ Form)
+    col_tanitim, col_bosluk, col_giris = st.columns([1.3, 0.2, 1.1])
 
     with col_tanitim:
-        st.write("<br>", unsafe_allow_html=True)
-        st.markdown("<h1 style='font-size: 3.5rem; color: #0f172a; line-height: 1.1; font-weight: 900; margin-bottom: 15px; letter-spacing: -1px;'>Eğitimde <span style='color: #d4af37;'>Yeni Nesil</span> Koçluk Deneyimi</h1>", unsafe_allow_html=True)
-        st.markdown("<p style='font-size: 1.2rem; color: #475569; font-weight: 500; margin-bottom: 40px; line-height: 1.6;'>Öğrenci takibi, detaylı deneme analizleri ve şeffaf veli iletişimini tek bir merkezden, kusursuz bir dijital mimariyle yönetin.</p>", unsafe_allow_html=True)
-        
-        # --- SİSTEM VİTRİNİ (YAVAŞLATILMIŞ & MODERNİZE EDİLMİŞ SLIDER) ---
-        carousel_html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-        <style>
-        .slider-container {{
-            position: relative;
-            width: 100%;
-            height: 480px;
-            border-radius: 24px;
-            overflow: hidden;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.08);
-            background-color: #ffffff;
-            border: 1px solid rgba(226, 232, 240, 0.8);
-        }}
-        .slide {{
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            opacity: 0;
-            transition: opacity 0.8s ease-in-out;
-            display: flex;
-            flex-direction: column;
-        }}
-        .slide.active {{ opacity: 1; z-index: 10; }}
-        
-        .img-wrapper {{
-            width: 100%;
-            height: 60%;
-            background: radial-gradient(circle, #ffffff 0%, #f1f5f9 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }}
-        .img-wrapper img {{
-            width: 90%;
-            height: 90%;
-            object-fit: contain;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            margin-top: 15px;
-        }}
-        
-        .text-wrapper {{
-            height: 40%;
-            padding: 30px 40px;
-            background: #ffffff;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }}
-        h3 {{
-            margin: 0 0 10px 0;
-            color: #b45309;
-            font-size: 24px;
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            font-weight: 800;
-        }}
-        p {{
-            margin: 0;
-            color: #475569;
-            font-size: 16px;
-            line-height: 1.6;
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            font-weight: 500;
-        }}
-        
-        /* 3.5 saniyede dolan altın renkli ilerleme çubuğu */
-        .progress-bar {{
-            position: absolute;
-            bottom: 0; left: 0;
-            height: 6px;
-            background: linear-gradient(90deg, #d4af37, #fde047);
-            width: 0%;
-            transition: width 3.5s linear;
-            z-index: 20;
-        }}
-        </style>
-        </head>
-        <body>
-        
-        <div class="slider-container" id="slider">
-            <div class="slide active">
-                <div class="img-wrapper"><img src="{get_img_str('calısma_programı.png')}"></div>
-                <div class="text-wrapper">
-                    <h3>📅 Kişiselleştirilmiş Haftalık Planlar</h3>
-                    <p>Öğrencilerinizin hedeflerine ve seviyelerine en uygun, tamamen esnek çalışma programları oluşturun. Süreci dakikası dakikasına profesyonelce yönetin.</p>
-                </div>
-            </div>
-            <div class="slide">
-                <div class="img-wrapper"><img src="{get_img_str('deneme_analız.png')}"></div>
-                <div class="text-wrapper">
-                    <h3>📈 Gelişmiş Net ve Deneme Analizi</h3>
-                    <p>YKS ve LGS deneme sonuçlarını derinlemesine analiz edin. Öğrencinin net artış grafiklerini inceleyerek eksik konuları nokta atışı tespit edin.</p>
-                </div>
-            </div>
-            <div class="slide">
-                <div class="img-wrapper"><img src="{get_img_str('odev_takıp.png')}"></div>
-                <div class="text-wrapper">
-                    <h3>✅ Akıllı Ödev Kontrol Mekanizması</h3>
-                    <p>Verdiğiniz ödevlerin yapılıp yapılmadığını ve yüzde kaç oranında tamamlandığını tek bir ekrandan anlık olarak izleyerek öğrenci sorumluluğunu artırın.</p>
-                </div>
-            </div>
-            <div class="slide">
-                <div class="img-wrapper"><img src="{get_img_str('kaynak_yonetımı.png')}"></div>
-                <div class="text-wrapper">
-                    <h3>📚 Dijital Kaynak ve Kitap Yönetimi</h3>
-                    <p>Öğrencilerin çözdüğü soru bankalarını sisteme tanımlayın. Hangi kitaptan kaç sayfa çözüldüğünü takip ederek kaynak israfının önüne geçin.</p>
-                </div>
-            </div>
-            <div class="slide">
-                <div class="img-wrapper"><img src="{get_img_str('velı_bılgılendırme.png')}"></div>
-                <div class="text-wrapper">
-                    <h3>👨‍👩‍👧 Şeffaf Veli Bilgilendirme Portalı</h3>
-                    <p>Velileriniz, kendilerine özel şifrelerle sisteme girerek çocuklarının gelişimini anlık izlesin. Kurumsal prestijinizi zirveye taşıyın.</p>
-                </div>
-            </div>
+        st.write("<br><br>", unsafe_allow_html=True)
+        # 1. Logo Yükleme Alanı
+        try:
+            st.image("yenı_logo.png", width=220)
+        except:
+            st.markdown("<h1 style='color: #d4af37;'>EMİR HOCA</h1>", unsafe_allow_html=True)
             
-            <div class="progress-bar" id="progress"></div>
+        # 2. Slogan ve Açıklama
+        st.markdown("<h2 style='font-size: 2.8rem; color: #ffffff; font-weight: 700; line-height: 1.2; margin-top: 20px;'>Daha iyi bir gelecek<br>için, <span style='color: #d4af37;'>doğru takip.</span></h2>", unsafe_allow_html=True)
+        st.markdown("<p style='font-size: 1.1rem; color: #cbd5e1; margin-top: 15px; max-width: 450px;'>Öğrencilerinizin gelişimini adım adım takip edin. Hedeflerine ulaşmaları için onlarla birlikte ilerleyin.</p>", unsafe_allow_html=True)
+        
+        # 3. İkonlu Özellikler (Tasarımındaki alt 4'lü menü)
+        st.markdown("""
+        <div style="display: flex; gap: 40px; margin-top: 50px;">
+            <div style="text-align: center; color: #e2e8f0;">
+                <div style="font-size: 28px; color: #d4af37; margin-bottom: 8px;">📅</div>
+                <div style="font-size: 14px; font-weight: 600; line-height: 1.3;">Ders<br>Programı</div>
+            </div>
+            <div style="text-align: center; color: #e2e8f0;">
+                <div style="font-size: 28px; color: #d4af37; margin-bottom: 8px;">📊</div>
+                <div style="font-size: 14px; font-weight: 600; line-height: 1.3;">Deneme<br>Analizi</div>
+            </div>
+            <div style="text-align: center; color: #e2e8f0;">
+                <div style="font-size: 28px; color: #d4af37; margin-bottom: 8px;">👨‍👩‍👧</div>
+                <div style="font-size: 14px; font-weight: 600; line-height: 1.3;">Veli<br>Bilgilendirme</div>
+            </div>
+            <div style="text-align: center; color: #e2e8f0;">
+                <div style="font-size: 28px; color: #d4af37; margin-bottom: 8px;">🎯</div>
+                <div style="font-size: 14px; font-weight: 600; line-height: 1.3;">Konu<br>Takibi</div>
+            </div>
         </div>
-
-        <script>
-            const slides = document.querySelectorAll('.slide');
-            const progress = document.getElementById('progress');
-            let currentIndex = 0;
-            
-            function showNextSlide() {{
-                slides[currentIndex].classList.remove('active');
-                currentIndex = (currentIndex + 1) % slides.length;
-                slides[currentIndex].classList.add('active');
-                
-                // İlerleme çubuğunu sıfırla ve 3.5 saniye için tekrar başlat
-                progress.style.transition = 'none';
-                progress.style.width = '0%';
-                setTimeout(() => {{
-                    progress.style.transition = 'width 3.5s linear';
-                    progress.style.width = '100%';
-                }}, 50);
-            }}
-            
-            setTimeout(() => {{
-                progress.style.width = '100%';
-            }}, 50);
-            
-            // Her 3.5 Saniyede Bir Slaytı Değiştir (3500ms)
-            setInterval(showNextSlide, 3500);
-        </script>
-        </body>
-        </html>
-        """
-        components.html(carousel_html, height=500)
-
+        """, unsafe_allow_html=True)
 
     with col_giris:
-        # --- LOGO BURAYA TAŞINDI (Sağ Taraf, Formun Üstü, Ortalanmış) ---
-        c_logo_sol, c_logo_orta, c_logo_sag = st.columns([1, 2, 1])
-        with c_logo_orta:
-            try:
-                st.image("yenı_logo.png", use_container_width=True)
-            except:
-                st.markdown("<div style='text-align: center; font-size: 50px;'>👑</div>", unsafe_allow_html=True)
+        st.write("<br>", unsafe_allow_html=True)
         
-        st.markdown("<h3 style='color: #1e293b; text-align: center; margin-bottom: 25px; font-weight: 800; letter-spacing: -0.5px;'>Sisteme Giriş Yapın</h3>", unsafe_allow_html=True)
+        # Form Üstü Karşılama
+        st.markdown("<h2 style='color: #ffffff; font-weight: 700; margin-bottom: 5px;'>Hoş Geldiniz</h2>", unsafe_allow_html=True)
+        st.markdown("<p style='color: #94a3b8; font-size: 14px; margin-bottom: 25px;'>Hesabınıza giriş yapın</p>", unsafe_allow_html=True)
         
-        # --- GİRİŞ VE KAYIT PANELİ (YENİ SEKME İSİMLERİ) ---
-        tab_ogretmen, tab_ogrenci, tab_kayit = st.tabs(["👨‍🏫 Öğretmen Girişi", "🎓 Öğrenci / Veli Girişi", "✨ Kayıt Ol"])
+        # --- GİRİŞ VE KAYIT PANELİ ---
+        tab_ogretmen, tab_ogrenci, tab_kayit = st.tabs(["👨‍🏫 Öğretmen", "🎓 Öğrenci / Veli", "✨ Kayıt Ol"])
 
         with tab_ogretmen:
             with st.form("ogretmen_giris_formu"):
                 k_adi = st.text_input("Kullanıcı Adı")
                 k_sifre = st.text_input("Şifre", type="password")
                 
-                if st.form_submit_button("Giriş Yap"):
+                if st.form_submit_button("Giriş Yap ➔"):
                     temiz_k_adi = str(k_adi).replace(" ", "").strip()
                     temiz_k_sifre = str(k_sifre).replace(" ", "").strip()
 
@@ -456,13 +345,21 @@ if not st.session_state['giris_yapildi']:
                             st.error("⚠️ Hesabınız henüz onaylanmamış.")
                     else:
                         st.error("❌ Hatalı kullanıcı adı veya şifre!")
+                
+                # Alt Kısım Ekstralar (Beni Hatırla / Şifremi Unuttum Görsel Efekti)
+                st.markdown("""
+                <div style="display: flex; justify-content: space-between; margin-top: 15px; font-size: 12px; color: #64748b;">
+                    <div><input type="checkbox" checked style="accent-color: #d4af37;"> Beni hatırla</div>
+                    <div style="cursor: pointer; color: #cbd5e1;">Şifremi Unuttum?</div>
+                </div>
+                """, unsafe_allow_html=True)
 
         with tab_ogrenci:
             with st.form("ogrenci_giris_formu"):
                 veli_tel = st.text_input("Veli Telefon Numarası")
                 ogrenci_sifre_input = st.text_input("Öğrenci Şifresi", type="password")
                 
-                if st.form_submit_button("Giriş Yap"):
+                if st.form_submit_button("Giriş Yap ➔"):
                     temiz_tel = str(veli_tel).replace(" ", "").strip()
                     temiz_sifre = str(ogrenci_sifre_input).replace(" ", "").strip().lower()
                     
@@ -489,12 +386,11 @@ if not st.session_state['giris_yapildi']:
 
         with tab_kayit:
             with st.form("kayit_formu"):
-                st.info("Sistemimize katılmak için kayıt talebinizi oluşturun.")
-                yeni_ad = st.text_input("Adınız Soyadınız")
-                yeni_kadi = st.text_input("Kullanıcı Adı Seçin (Boşluksuz)")
+                yeni_ad = st.text_input("Ad Soyad")
+                yeni_kadi = st.text_input("Kullanıcı Adı Seçin")
                 yeni_sifre = st.text_input("Şifre Belirleyin", type="password")
                 
-                if st.form_submit_button("Kayıt Ol"):
+                if st.form_submit_button("Kayıt Ol ➔"):
                     if yeni_ad and yeni_kadi and yeni_sifre:
                         kontrol = supabase.table("ogretmenler").select("*").eq("kullanici_adi", yeni_kadi).execute()
                         if len(kontrol.data) > 0:
@@ -509,11 +405,14 @@ if not st.session_state['giris_yapildi']:
                             }
                             try:
                                 supabase.table("ogretmenler").insert(yeni_data).execute()
-                                st.success("✅ Talebiniz alındı! Yönetici onayından sonra giriş yapabilirsiniz.")
+                                st.success("✅ Talebiniz alındı! Onaylandıktan sonra giriş yapabilirsiniz.")
                             except Exception as e:
                                 st.error(f"Hata: {e}")
                     else:
                         st.warning("Lütfen tüm alanları doldurun.")
+                        
+        # En Alta Ufak Logo İmzası (Tasarımındaki gibi)
+        st.markdown("<hr style='border-color: rgba(255,255,255,0.1); margin-top: 30px;'><p style='text-align: center; color: #64748b; font-size: 12px; letter-spacing: 2px;'>EMİR HOCA ÖĞRENCİ TAKİP SİSTEMİ</p>", unsafe_allow_html=True)
 
     st.stop()
 # --- GİRİŞ YAPILDIYSA UYGULAMA BURADAN DEVAM EDER ---
