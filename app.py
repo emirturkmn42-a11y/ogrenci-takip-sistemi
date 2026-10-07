@@ -9,6 +9,7 @@ import urllib.parse
 from PIL import Image
 from datetime import datetime
 import altair as alt
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # --- YENİ EKLENEN BULUT BAĞLANTISI ---
 from supabase import create_client, Client
@@ -352,18 +353,44 @@ if not st.session_state['giris_yapildi']:
                 if submit_btn:
                     temiz_k_adi = str(k_adi).replace(" ", "").strip()
                     temiz_k_sifre = str(k_sifre).replace(" ", "").strip()
-                    ogretmen_sorgu = supabase.table("ogretmenler").select("*").eq("kullanici_adi", temiz_k_adi).eq("sifre", temiz_k_sifre).execute()
+                    
+                    # Sadece kullanıcı adına göre kişiyi veritabanından bul
+                    ogretmen_sorgu = supabase.table("ogretmenler").select("*").eq("kullanici_adi", temiz_k_adi).execute()
+                    
                     if len(ogretmen_sorgu.data) > 0:
                         user_data = ogretmen_sorgu.data[0]
-                        if user_data['onayli']:
-                            st.session_state['giris_yapildi'] = True
-                            st.session_state['rol'] = "ADMIN"
-                            st.session_state['yetki_seviyesi'] = user_data['rol']
-                            st.session_state['aktif_ogretmen_id'] = user_data['id']
-                            st.session_state['ad_soyad'] = user_data['ad_soyad']
-                            st.rerun()
+                        db_sifre = user_data['sifre']
+                        
+                        giris_dogru_mu = False
+                        eski_sifreyi_guncelle = False
+                        
+                        # Eğer şifre zaten kriptoluysa (yeni sisteme geçmişse)
+                        if db_sifre.startswith("pbkdf2:") or db_sifre.startswith("scrypt:"):
+                            if check_password_hash(db_sifre, temiz_k_sifre):
+                                giris_dogru_mu = True
+                        # Eğer şifre hala düz metinse (eski sistem)
                         else:
-                            st.error("⚠️ Hesabınız henüz onaylanmamış.")
+                            if db_sifre == temiz_k_sifre:
+                                giris_dogru_mu = True
+                                eski_sifreyi_guncelle = True 
+                        
+                        if giris_dogru_mu:
+                            if user_data['onayli']:
+                                # Kişi eski sistemdeyse, şifresini hissettirmeden kriptola ve DB'yi güncelle
+                                if eski_sifreyi_guncelle:
+                                    yeni_hash = generate_password_hash(temiz_k_sifre)
+                                    supabase.table("ogretmenler").update({"sifre": yeni_hash}).eq("id", user_data['id']).execute()
+                                
+                                st.session_state['giris_yapildi'] = True
+                                st.session_state['rol'] = "ADMIN"
+                                st.session_state['yetki_seviyesi'] = user_data['rol']
+                                st.session_state['aktif_ogretmen_id'] = user_data['id']
+                                st.session_state['ad_soyad'] = user_data['ad_soyad']
+                                st.rerun()
+                            else:
+                                st.error("⚠️ Hesabınız henüz onaylanmamış.")
+                        else:
+                            st.error("❌ Hatalı kullanıcı adı veya şifre!")
                     else:
                         st.error("❌ Hatalı kullanıcı adı veya şifre!")
 
@@ -413,10 +440,11 @@ if not st.session_state['giris_yapildi']:
                         if len(kontrol.data) > 0:
                             st.error("❌ Bu kullanıcı adı zaten alınmış.")
                         else:
+                            kriptolu_sifre = generate_password_hash(yeni_sifre)
                             yeni_data = {
                                 "ad_soyad": yeni_ad,
                                 "kullanici_adi": yeni_kadi,
-                                "sifre": yeni_sifre,
+                                "sifre": kriptolu_sifre,
                                 "onayli": False,
                                 "rol": "OGRETMEN"
                             }
@@ -446,7 +474,7 @@ if not st.session_state['giris_yapildi']:
 with st.sidebar.expander("⚙️ Profil Ayarları"):
     st.info("Bilgilerinizi buradan güncelleyebilirsiniz.")
     
-    # Supabase'den öğretmenin güncel bilgilerini çekiyoruz ki kutular dolu gelsin
+    # Supabase'den öğretmenin güncel bilgilerini çekiyoruz
     mevcut_bilgi_sorgusu = supabase.table("ogretmenler").select("ad_soyad, kullanici_adi, sifre").eq("id", st.session_state['aktif_ogretmen_id']).execute()
     
     if len(mevcut_bilgi_sorgusu.data) > 0:
@@ -454,30 +482,56 @@ with st.sidebar.expander("⚙️ Profil Ayarları"):
         
         with st.form("profil_guncelleme_formu"):
             yeni_ad = st.text_input("Ad Soyad", value=mevcut['ad_soyad'])
-            yeni_kadi = st.text_input("Kullanıcı Adı", value=mevcut['kullanici_adi'])
-            yeni_sifre = st.text_input("Şifre", value=mevcut['sifre'], type="password")
+            yeni_kadi = st.text_input("Kullanıcı Adı / E-posta", value=mevcut['kullanici_adi'])
+            
+            st.markdown("---")
+            st.caption("🔒 Şifre Değiştirme (İstemiyorsanız boş bırakın)")
+            eski_sifre = st.text_input("Mevcut Şifreniz", type="password", placeholder="Sadece şifre değiştirecekseniz girin")
+            yeni_sifre = st.text_input("Yeni Şifre", type="password")
+            yeni_sifre_tekrar = st.text_input("Yeni Şifre (Tekrar)", type="password")
             
             if st.form_submit_button("💾 Değişiklikleri Kaydet", use_container_width=True):
-                # Başka biri bu kullanıcı adını almış mı kontrolü (kendisi hariç)
+                # Başka biri bu kullanıcı adını almış mı kontrolü
                 kadi_kontrol = supabase.table("ogretmenler").select("id").eq("kullanici_adi", yeni_kadi).neq("id", st.session_state['aktif_ogretmen_id']).execute()
                 
                 if len(kadi_kontrol.data) > 0:
                     st.error("❌ Bu kullanıcı adı başkası tarafından kullanılıyor.")
                 else:
-                    try:
-                        # Veritabanını güncelle
-                        supabase.table("ogretmenler").update({
-                            "ad_soyad": yeni_ad,
-                            "kullanici_adi": yeni_kadi,
-                            "sifre": yeni_sifre
-                        }).eq("id", st.session_state['aktif_ogretmen_id']).execute()
-                        
-                        # Ekranda ismin hemen değişmesi için session_state'i de güncelle
-                        st.session_state['ad_soyad'] = yeni_ad
-                        st.success("✅ Bilgileriniz başarıyla güncellendi!")
-                        st.rerun()
-                    except Exception as e:
-                        st.error("Bir hata oluştu, lütfen tekrar deneyin.")
+                    guncellenecek_veriler = {
+                        "ad_soyad": yeni_ad,
+                        "kullanici_adi": yeni_kadi
+                    }
+                    
+                    sifre_hatasi = False
+                    
+                    # Eğer şifre alanlarından herhangi birine bir şey yazıldıysa:
+                    if eski_sifre or yeni_sifre or yeni_sifre_tekrar:
+                        if not eski_sifre:
+                            st.error("❌ Şifrenizi değiştirmek için 'Mevcut Şifrenizi' girmelisiniz.")
+                            sifre_hatasi = True
+                        elif not check_password_hash(mevcut['sifre'], eski_sifre):
+                            st.error("❌ Mevcut şifrenizi yanlış girdiniz!")
+                            sifre_hatasi = True
+                        elif yeni_sifre != yeni_sifre_tekrar:
+                            st.error("❌ Yeni girdiğiniz şifreler birbiriyle uyuşmuyor.")
+                            sifre_hatasi = True
+                        elif len(yeni_sifre) < 6:
+                            st.error("❌ Yeni şifreniz en az 6 karakter olmalıdır.")
+                            sifre_hatasi = True
+                        else:
+                            # Her şey doğruysa yeni şifreyi hash'le ve eklenecek verilere kat
+                            guncellenecek_veriler["sifre"] = generate_password_hash(yeni_sifre)
+                    
+                    # Hata yoksa veritabanını güncelle
+                    if not sifre_hatasi:
+                        try:
+                            supabase.table("ogretmenler").update(guncellenecek_veriler).eq("id", st.session_state['aktif_ogretmen_id']).execute()
+                            
+                            st.session_state['ad_soyad'] = yeni_ad
+                            st.success("✅ Bilgileriniz başarıyla güncellendi!")
+                            st.rerun()
+                        except Exception as e:
+                            st.error("Bir hata oluştu, lütfen tekrar deneyin.")
 
 # --- ÇIKIŞ YAP BUTONU ---
 c_ust1, c_ust2 = st.columns([10, 1])
