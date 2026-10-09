@@ -1728,7 +1728,7 @@ if not df.empty:
         st.markdown("---")
         
         # --- 2. ÖDEV KARTLARI (SEKMELİ YAPI) ---
-        res_odev = supabase.table("odev_takip").select("*").eq("ogrenci_id", secili_id).order("id", desc=True).execute()
+        res_odev = supabase.table("odev_takip").select("*").eq("ogrenci_id", int(secili_id)).order("id", desc=True).execute()
         df_odev = pd.DataFrame(res_odev.data) if res_odev.data else pd.DataFrame()
         
         if not df_odev.empty:
@@ -1749,25 +1749,12 @@ if not df.empty:
                                 st.markdown(f"**📅 {row['tarih']} | 🧮 {row['ders']}**")
                                 st.markdown(f"<h5 style='color:#1e293b;'>{row['kaynak_konu']}</h5>", unsafe_allow_html=True)
                             with c2:
-                                # Veritabanındaki eski yazıyı boşverip güncel yüzdeye göre yeni yazıyı belirliyoruz
-                                anlik_yuzde = (row['net'] / row['verilen_soru']) * 100 if row['verilen_soru'] > 0 else 0
-                                
-                                if anlik_yuzde >= 85:
-                                    gosterilecek_durum = "🌟 Mükemmel"
-                                elif anlik_yuzde >= 70:
-                                    gosterilecek_durum = "👏 Çok İyi"
-                                elif anlik_yuzde >= 55:
-                                    gosterilecek_durum = "👍 İyi / İstikrarlı"
-                                elif anlik_yuzde >= 40:
-                                    gosterilecek_durum = "📚 Gelişim Gösteriyor"
-                                else:
-                                    gosterilecek_durum = "🚀 Daha Fazla Pratik Yapmalı"
-                                    
-                                st.markdown(f"<div style='text-align:right;'><span style='font-size:16px; font-weight:bold;'>{gosterilecek_durum}</span></div>", unsafe_allow_html=True)
+                                # BEKLEYEN ÖDEVLER İÇİN DÜZELTİLDİ: Sadece hedef soru sayısını gösterir
+                                st.markdown(f"<div style='text-align:right;'><span style='background-color:#f1f5f9; padding:5px 10px; border-radius:15px; color:#475569; font-weight:bold;'>🎯 Hedef: {row['verilen_soru']} Soru</span></div>", unsafe_allow_html=True)
                             
                             st.divider()
                             
-                            # Sonuç Giriş Paneli - YENİ BAŞARI BAREMİ
+                            # Sonuç Giriş Paneli
                             st.markdown("###### Sonuç Girişi")
                             with st.form(key=f"odev_sonuc_form_{row['id']}"):
                                 sc1, sc2, sc3, sc4 = st.columns(4)
@@ -1827,7 +1814,21 @@ if not df.empty:
                                 st.markdown(f"**📅 {row['tarih']} | 🧮 {row['ders']}**")
                                 st.markdown(f"<h5 style='color:#1e293b; text-decoration: line-through;'>{row['kaynak_konu']}</h5>", unsafe_allow_html=True)
                             with c2:
-                                st.markdown(f"<div style='text-align:right;'><span style='font-size:16px; font-weight:bold;'>{row['durum']}</span></div>", unsafe_allow_html=True)
+                                # TAMAMLANAN ÖDEVLER İÇİN DÜZELTİLDİ: Eski ödevler bile yeni metinlerle ekrana gelir
+                                anlik_yuzde = (row['net'] / row['verilen_soru']) * 100 if row['verilen_soru'] > 0 else 0
+                                
+                                if anlik_yuzde >= 85:
+                                    gosterilecek_durum = "🌟 Mükemmel"
+                                elif anlik_yuzde >= 70:
+                                    gosterilecek_durum = "👏 Çok İyi"
+                                elif anlik_yuzde >= 55:
+                                    gosterilecek_durum = "👍 İyi / İstikrarlı"
+                                elif anlik_yuzde >= 40:
+                                    gosterilecek_durum = "📚 Gelişim Gösteriyor"
+                                else:
+                                    gosterilecek_durum = "🚀 Daha Fazla Pratik Yapmalı"
+                                    
+                                st.markdown(f"<div style='text-align:right;'><span style='font-size:16px; font-weight:bold;'>{gosterilecek_durum}</span></div>", unsafe_allow_html=True)
                             
                             st.divider()
                             
