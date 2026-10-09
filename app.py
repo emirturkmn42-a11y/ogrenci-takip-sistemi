@@ -2170,8 +2170,8 @@ if not df.empty:
                 
                 # 1. ÖDEV DURUMLARI (Sadece raporlanmamış yeniler - "Bu Haftaki" ibaresi kaldırıldı)
                 if "📚 Ödev Durumları" in secilen_moduller:
-                    # DİKKAT: net ve verilen_soru verilerini de çektik ki hesaplama yapabilelim!
-                    res_all_odev = supabase.table("odev_takip").select("id, ders, kaynak_konu, durum, raporlandi, net, verilen_soru").eq("ogrenci_id", int(secili_id)).order("id", desc=True).execute()
+                    # DİKKAT: dogru, yanlis ve bos verilerini de çektik!
+                    res_all_odev = supabase.table("odev_takip").select("id, ders, kaynak_konu, durum, raporlandi, net, verilen_soru, dogru, yanlis, bos").eq("ogrenci_id", int(secili_id)).order("id", desc=True).execute()
                     df_all_odev = pd.DataFrame(res_all_odev.data) if res_all_odev.data else pd.DataFrame()
                     yeni_odevler = df_all_odev[(df_all_odev['raporlandi'] == 0) | (df_all_odev['raporlandi'].isna())] if not df_all_odev.empty else pd.DataFrame()
                     
@@ -2180,18 +2180,32 @@ if not df.empty:
                     if not yeni_odevler.empty:
                         for _, odev in yeni_odevler.iterrows():
                             
-                            # Veritabanındaki eski yazıyı boşverip güncel yüzdeye göre yeni yazıyı belirliyoruz
                             durum_metni = odev['durum']
-                            if durum_metni != "Bekleniyor" and pd.notna(odev.get('net')) and pd.notna(odev.get('verilen_soru')):
-                                anlik_yuzde = (odev['net'] / odev['verilen_soru']) * 100 if odev['verilen_soru'] > 0 else 0
-                                if anlik_yuzde >= 85: durum_metni = "🌟 Mükemmel"
-                                elif anlik_yuzde >= 70: durum_metni = "👏 Çok İyi"
-                                elif anlik_yuzde >= 55: durum_metni = "👍 İyi / İstikrarlı"
-                                elif anlik_yuzde >= 40: durum_metni = "📚 Gelişim Gösteriyor"
-                                else: durum_metni = "🚀 Daha Fazla Pratik Yapmalı"
+                            
+                            # Ödev henüz tamamlanmadıysa (Bekliyorsa)
+                            if durum_metni == "Bekleniyor":
+                                eklenecek_metin = f"Bekleniyor (Hedef: {odev.get('verilen_soru', '-')} Soru)"
+                            else:
+                                # Veritabanındaki eski yazıyı boşverip güncel yüzdeye göre yeni yazıyı belirliyoruz
+                                if pd.notna(odev.get('net')) and pd.notna(odev.get('verilen_soru')):
+                                    anlik_yuzde = (odev['net'] / odev['verilen_soru']) * 100 if odev['verilen_soru'] > 0 else 0
+                                    if anlik_yuzde >= 85: durum_metni = "🌟 Mükemmel"
+                                    elif anlik_yuzde >= 70: durum_metni = "👏 Çok İyi"
+                                    elif anlik_yuzde >= 55: durum_metni = "👍 İyi / İstikrarlı"
+                                    elif anlik_yuzde >= 40: durum_metni = "📚 Gelişim Gösteriyor"
+                                    else: durum_metni = "🚀 Daha Fazla Pratik Yapmalı"
+                                
+                                # Doğru, Yanlış, Boş değişkenlerini temiz çekelim
+                                d = int(odev.get('dogru', 0)) if pd.notna(odev.get('dogru')) else 0
+                                y = int(odev.get('yanlis', 0)) if pd.notna(odev.get('yanlis')) else 0
+                                b = int(odev.get('bos', 0)) if pd.notna(odev.get('bos')) else 0
+                                
+                                # Metni birleştiriyoruz (Örn: 18D 2Y 0B | 👏 Çok İyi)
+                                eklenecek_metin = f"{d}D {y}Y {b}B  |  {durum_metni}"
 
-                            veli_metni += f" └ {odev['ders']} ({odev['kaynak_konu']}): {durum_metni}\n"
-                            rapor_html += f'<div class="satir">🔹 <b>{odev["ders"]}</b> ({odev["kaynak_konu"]}): <i>{durum_metni}</i></div>'
+                            veli_metni += f" └ {odev['ders']} ({odev['kaynak_konu']}): {eklenecek_metin}\n"
+                            # HTML'de doğru/yanlış kısımlarını daha okunaklı yapmak için kalın(bold) yazdırıyoruz
+                            rapor_html += f'<div class="satir">🔹 <b>{odev["ders"]}</b> ({odev["kaynak_konu"]}): <b>{d}D {y}Y {b}B</b> <i>({durum_metni})</i></div>' if durum_metni != "Bekleniyor" else f'<div class="satir">🔹 <b>{odev["ders"]}</b> ({odev["kaynak_konu"]}): <i>{eklenecek_metin}</i></div>'
                     else:
                         veli_metni += " └ Raporlanacak yeni ödev kaydı bulunmuyor.\n"
                         rapor_html += '<div class="satir">Raporlanacak yeni ödev kaydı bulunmuyor.</div>'
