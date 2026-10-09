@@ -10,6 +10,7 @@ from PIL import Image
 from datetime import datetime
 import altair as alt
 from werkzeug.security import generate_password_hash, check_password_hash
+import datetime
 
 # --- YENİ EKLENEN BULUT BAĞLANTISI ---
 from supabase import create_client, Client
@@ -2165,7 +2166,7 @@ if not df.empty:
 
             if st.button("Raporu Hazırla", type="primary"):
                 # Rapor Metni Başlangıcı (Tarih eklendi)
-                su_an = datetime.now()
+                su_an = datetime.datetime.now()
                 veli_metni = f"🎓 *ÖTS - VELİ BİLGİLENDİRME RAPORU* 🎓\n👤 *Öğrenci:* {secili_ogrenci['ad_soyad']}\n📅 *Tarih:* {su_an.strftime('%d.%m.%Y')}\n➖➖➖➖➖➖\n"
                 rapor_html = ""
                 
