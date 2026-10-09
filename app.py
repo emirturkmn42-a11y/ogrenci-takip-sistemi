@@ -1749,7 +1749,21 @@ if not df.empty:
                                 st.markdown(f"**📅 {row['tarih']} | 🧮 {row['ders']}**")
                                 st.markdown(f"<h5 style='color:#1e293b;'>{row['kaynak_konu']}</h5>", unsafe_allow_html=True)
                             with c2:
-                                st.markdown(f"<div style='text-align:right;'><span style='background-color:#f1f5f9; padding:5px 10px; border-radius:15px; color:#475569; font-weight:bold;'>🎯 Hedef: {row['verilen_soru']} Soru</span></div>", unsafe_allow_html=True)
+                                # Veritabanındaki eski yazıyı boşverip güncel yüzdeye göre yeni yazıyı belirliyoruz
+                                anlik_yuzde = (row['net'] / row['verilen_soru']) * 100 if row['verilen_soru'] > 0 else 0
+                                
+                                if anlik_yuzde >= 85:
+                                    gosterilecek_durum = "🌟 Mükemmel"
+                                elif anlik_yuzde >= 70:
+                                    gosterilecek_durum = "👏 Çok İyi"
+                                elif anlik_yuzde >= 55:
+                                    gosterilecek_durum = "👍 İyi / İstikrarlı"
+                                elif anlik_yuzde >= 40:
+                                    gosterilecek_durum = "📚 Gelişim Gösteriyor"
+                                else:
+                                    gosterilecek_durum = "🚀 Daha Fazla Pratik Yapmalı"
+                                    
+                                st.markdown(f"<div style='text-align:right;'><span style='font-size:16px; font-weight:bold;'>{gosterilecek_durum}</span></div>", unsafe_allow_html=True)
                             
                             st.divider()
                             
