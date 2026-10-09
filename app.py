@@ -2170,7 +2170,8 @@ if not df.empty:
                 
                 # 1. ÖDEV DURUMLARI (Sadece raporlanmamış yeniler - "Bu Haftaki" ibaresi kaldırıldı)
                 if "📚 Ödev Durumları" in secilen_moduller:
-                    res_all_odev = supabase.table("odev_takip").select("id, ders, kaynak_konu, durum, raporlandi").eq("ogrenci_id", secili_id).order("id", desc=True).execute()
+                    # DİKKAT: net ve verilen_soru verilerini de çektik ki hesaplama yapabilelim!
+                    res_all_odev = supabase.table("odev_takip").select("id, ders, kaynak_konu, durum, raporlandi, net, verilen_soru").eq("ogrenci_id", int(secili_id)).order("id", desc=True).execute()
                     df_all_odev = pd.DataFrame(res_all_odev.data) if res_all_odev.data else pd.DataFrame()
                     yeni_odevler = df_all_odev[(df_all_odev['raporlandi'] == 0) | (df_all_odev['raporlandi'].isna())] if not df_all_odev.empty else pd.DataFrame()
                     
@@ -2178,8 +2179,19 @@ if not df.empty:
                     rapor_html += '<div class="kutu"><div class="kutu-baslik">📚 Güncel Ödev Durumları (Son rapordan itibaren)</div>'
                     if not yeni_odevler.empty:
                         for _, odev in yeni_odevler.iterrows():
-                            veli_metni += f" └ {odev['ders']} ({odev['kaynak_konu']}): {odev['durum']}\n"
-                            rapor_html += f'<div class="satir">🔹 <b>{odev["ders"]}</b> ({odev["kaynak_konu"]}): <i>{odev["durum"]}</i></div>'
+                            
+                            # Veritabanındaki eski yazıyı boşverip güncel yüzdeye göre yeni yazıyı belirliyoruz
+                            durum_metni = odev['durum']
+                            if durum_metni != "Bekleniyor" and pd.notna(odev.get('net')) and pd.notna(odev.get('verilen_soru')):
+                                anlik_yuzde = (odev['net'] / odev['verilen_soru']) * 100 if odev['verilen_soru'] > 0 else 0
+                                if anlik_yuzde >= 85: durum_metni = "🌟 Mükemmel"
+                                elif anlik_yuzde >= 70: durum_metni = "👏 Çok İyi"
+                                elif anlik_yuzde >= 55: durum_metni = "👍 İyi / İstikrarlı"
+                                elif anlik_yuzde >= 40: durum_metni = "📚 Gelişim Gösteriyor"
+                                else: durum_metni = "🚀 Daha Fazla Pratik Yapmalı"
+
+                            veli_metni += f" └ {odev['ders']} ({odev['kaynak_konu']}): {durum_metni}\n"
+                            rapor_html += f'<div class="satir">🔹 <b>{odev["ders"]}</b> ({odev["kaynak_konu"]}): <i>{durum_metni}</i></div>'
                     else:
                         veli_metni += " └ Raporlanacak yeni ödev kaydı bulunmuyor.\n"
                         rapor_html += '<div class="satir">Raporlanacak yeni ödev kaydı bulunmuyor.</div>'
