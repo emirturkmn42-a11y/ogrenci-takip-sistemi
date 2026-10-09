@@ -2146,8 +2146,6 @@ if not df.empty:
             st.markdown("### 👨‍👩‍👦 Veli Bilgilendirme ve Seçmeli Rapor Sistemi")
             st.info(f"**Veli:** {secili_ogrenci['veli_ad']} | **İletişim:** {secili_ogrenci['veli_telefon']}")
             
-            # (NOT: ALTER TABLE VE CREATE TABLE KISIMLARI KALDIRILDI. SUPABASE PANELİNDEN EKLENECEK.)
-
             # RAPOR İÇERİĞİ SEÇİMİ
             st.markdown("#### ⚙️ Raporda Neler Yer Alsın?")
             rapor_secenekleri = ["📚 Ödev Durumları", "📈 Genel Deneme Analizi", "🎯 Branş Denemeleri", "📖 Kayıtlı Kaynakların Durumu", "🎯 Haftanın Hedefi"]
@@ -2155,7 +2153,7 @@ if not df.empty:
             
             haftanin_hedefi = ""
             if "🎯 Haftanın Hedefi" in secilen_moduller:
-                haftanin_hedefi = st.text_input("Önümüzdeki Haftanın Hedefi (Örn: Logaritma fasikülü bitecek):")
+                haftanin_hedefi = st.text_input("Önümüzdeki Sürecin Hedefi (Örn: Logaritma fasikülü bitecek):")
                 
             veli_ozel_not = st.text_area("Veliye İletilecek Özel Not (Emir Hocanın Notu):", height=80, placeholder="Örn: Bu hafta ödevlerini çok düzenli yaptı, gayretinden memnunum...")
             
@@ -2166,18 +2164,18 @@ if not df.empty:
 
             if st.button("Raporu Hazırla", type="primary"):
                 # Rapor Metni Başlangıcı (Tarih eklendi)
-                su_an = datetime.datetime.now()
+                su_an = pd.Timestamp.now()
                 veli_metni = f"🎓 *ÖTS - VELİ BİLGİLENDİRME RAPORU* 🎓\n👤 *Öğrenci:* {secili_ogrenci['ad_soyad']}\n📅 *Tarih:* {su_an.strftime('%d.%m.%Y')}\n➖➖➖➖➖➖\n"
                 rapor_html = ""
                 
-                # 1. ÖDEV DURUMLARI (Sadece raporlanmamış yeniler)
+                # 1. ÖDEV DURUMLARI (Sadece raporlanmamış yeniler - "Bu Haftaki" ibaresi kaldırıldı)
                 if "📚 Ödev Durumları" in secilen_moduller:
                     res_all_odev = supabase.table("odev_takip").select("id, ders, kaynak_konu, durum, raporlandi").eq("ogrenci_id", secili_id).order("id", desc=True).execute()
                     df_all_odev = pd.DataFrame(res_all_odev.data) if res_all_odev.data else pd.DataFrame()
                     yeni_odevler = df_all_odev[(df_all_odev['raporlandi'] == 0) | (df_all_odev['raporlandi'].isna())] if not df_all_odev.empty else pd.DataFrame()
                     
-                    veli_metni += "📚 *BU HAFTAKİ ÖDEV DURUMLARI:*\n"
-                    rapor_html += '<div class="kutu"><div class="kutu-baslik">📚 Bu Haftaki Ödev Durumları</div>'
+                    veli_metni += "📚 *GÜNCEL ÖDEV DURUMLARI (Son rapordan itibaren):*\n"
+                    rapor_html += '<div class="kutu"><div class="kutu-baslik">📚 Güncel Ödev Durumları (Son rapordan itibaren)</div>'
                     if not yeni_odevler.empty:
                         for _, odev in yeni_odevler.iterrows():
                             veli_metni += f" └ {odev['ders']} ({odev['kaynak_konu']}): {odev['durum']}\n"
@@ -2280,8 +2278,8 @@ if not df.empty:
 
                 # 5. HAFTANIN HEDEFİ
                 if "🎯 Haftanın Hedefi" in secilen_moduller and haftanin_hedefi:
-                    veli_metni += f"🎯 *ÖNÜMÜZDEKİ HAFTANIN HEDEFİ:*\n └ {haftanin_hedefi}\n\n"
-                    rapor_html += f'<div class="not-kutu" style="border-color:#2980b9; background-color:#ebf5fb; margin-top: 20px;"><div class="not-baslik" style="color:#2980b9;">🎯 Önümüzdeki Haftanın Hedefi</div><div style="font-size: 16px;">{haftanin_hedefi}</div></div>'
+                    veli_metni += f"🎯 *ÖNÜMÜZDEKİ SÜRECİN HEDEFİ:*\n └ {haftanin_hedefi}\n\n"
+                    rapor_html += f'<div class="not-kutu" style="border-color:#2980b9; background-color:#ebf5fb; margin-top: 20px;"><div class="not-baslik" style="color:#2980b9;">🎯 Önümüzdeki Sürecin Hedefi</div><div style="font-size: 16px;">{haftanin_hedefi}</div></div>'
 
                 # ÖZEL NOT EKLENTİSİ
                 veli_metni += f"➖➖➖➖➖➖\n💡 *EMİR HOCANIN NOTU:*\n_{veli_ozel_not if veli_ozel_not else 'Öğrencimizin planlı takibi devam etmektedir.'}_"
@@ -2321,9 +2319,6 @@ if not df.empty:
                 st.session_state[state_key_metin] = veli_metni
                 st.session_state[state_key_html] = v_html
                 st.session_state[state_key_hazir] = True
-                
-                # Gelecekte Mühürleme Butonunda kullanmak üzere ID'leri Session'a kaydet (Opsiyonel ama güvenli)
-                # Sadece ilgili veriler mühürlenir.
 
             # HAZIRLANAN RAPORUN EKRANA BASILMASI VE ARŞİVLENMESİ
             if st.session_state.get(state_key_hazir, False):
@@ -2344,7 +2339,7 @@ if not df.empty:
                 
                 if st.button("✅ Raporu Gönderdim Olarak Mühürle ve Arşive Kaydet", type="primary"):
                     kaydedilecek_metin = st.session_state[state_key_metin].replace('*', '').replace('_', '')
-                    kayit_tarihi = datetime.now().strftime('%d.%m.%Y - %H:%M')
+                    kayit_tarihi = pd.Timestamp.now().strftime('%d.%m.%Y - %H:%M')
                     
                     # Raporu arşiv tablosuna ekle
                     supabase.table("veli_raporlari").insert({
@@ -2367,7 +2362,7 @@ if not df.empty:
                     st.success("✅ Rapor başarıyla arşive eklendi ve sistem sıfırlandı!")
                     st.rerun()
 
-            # GEÇMİŞ RAPORLAR LİSTESİ BÖLÜMÜ (YAZDIRILABİLİR BUTONLAR EKLENDİ)
+            # GEÇMİŞ RAPORLAR LİSTESİ BÖLÜMÜ (DÜZENLEME VE SİLME BUTONLARI EKLENDİ)
             st.divider()
             st.markdown("#### 🗂️ Geçmiş Veli Raporları Arşivi")
             res_gecmis = supabase.table("veli_raporlari").select("*").eq("ogrenci_id", secili_id).order("id", desc=True).execute()
@@ -2376,9 +2371,15 @@ if not df.empty:
             if not df_gecmis.empty:
                 for idx, rapor in df_gecmis.iterrows():
                     with st.expander(f"📄 Rapor Tarihi: {rapor['tarih']}"):
-                        st.text(rapor['rapor_metni'])
                         
-                        # Geçmiş Raporu PDF/HTML olarak indirebilmek için tasarım şablonu
+                        # Rapor Düzenleme Formu
+                        with st.form(key=f"rapor_duzenle_form_{rapor['id']}"):
+                            yeni_rapor_metni = st.text_area("Rapor İçeriği (İstediğiniz gibi düzenleyebilirsiniz):", value=rapor['rapor_metni'], height=250)
+                            if st.form_submit_button("💾 Değişiklikleri Kaydet", type="primary"):
+                                supabase.table("veli_raporlari").update({"rapor_metni": yeni_rapor_metni}).eq("id", rapor['id']).execute()
+                                st.rerun()
+                        
+                        # Geçmiş Raporu PDF/HTML olarak indirebilmek için tasarım şablonu (Güncel metinle)
                         arsiv_html = f"""
                         <!DOCTYPE html>
                         <html lang="tr">
@@ -2401,7 +2402,15 @@ if not df.empty:
                         </body>
                         </html>
                         """
-                        st.download_button("🖨️ Bu Raporun Çıktısını Al (PDF Olarak Kaydet)", data=arsiv_html, file_name=f"{secili_ogrenci['ad_soyad']}_Gecmis_Rapor_{rapor['id']}.html", mime="text/html", key=f"dl_arsiv_{rapor['id']}")
+                        
+                        rc1, rc2 = st.columns(2)
+                        with rc1:
+                            st.download_button("🖨️ Bu Raporun Çıktısını Al (PDF)", data=arsiv_html, file_name=f"{secili_ogrenci['ad_soyad']}_Gecmis_Rapor_{rapor['id']}.html", mime="text/html", key=f"dl_arsiv_{rapor['id']}", use_container_width=True)
+                        with rc2:
+                            # Silme İşlemi (Form dışında)
+                            if st.button("🗑️ Raporu Arşivden Sil", key=f"rapor_sil_{rapor['id']}"):
+                                supabase.table("veli_raporlari").delete().eq("id", rapor['id']).execute()
+                                st.rerun()
             else:
                 st.info("Bu öğrenci için henüz kaydedilmiş bir geçmiş rapor arşivi bulunmuyor. Gönderdiğiniz ve mühürlediğiniz raporlar burada listelenecektir.")
         else:
