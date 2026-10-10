@@ -2454,6 +2454,7 @@ if not df.empty:
                     # BAŞLIK KISMI AÇILIR LİSTE (SELECTBOX) OLARAK GÜNCELLENDİ
                     baslik_secenekleri = [
                         "Koçluk Dersi",
+                        "Online Ders",
                         "Matematik Özel Ders",
                         "Geometri Özel Ders", 
                         "Fizik Özel Ders", 
