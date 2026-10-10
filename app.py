@@ -1213,18 +1213,18 @@ if not df.empty:
     if st.session_state['rol'] == "ADMIN":
         sekme_listesi = [
             "📸 Profil", "📚 Kaynak Yönetimi" ,"📅 Çalışma Programı", "📚 Ödev Takibi", "📊 Deneme Puanı", 
-            "📑 Ders Konuları", "📝 Haftalık Analiz", "👨‍👩‍👦 Veli Bilgilendirme", 
+            "📑 Ders Konuları", "📝 Haftalık Analiz", "👨‍👩‍👦 Veli Bilgilendirme", "📆 Ajanda",
             "✏️ Güncelle", "🗑️ Sil"
         ]
     else:
         # Öğrenci girdiğinde son 2 sekme (Güncelle ve Sil) kilitli görünür
         sekme_listesi = [
             "📸 Profil", "📚 Kaynak Yönetimi" ,"📅 Çalışma Programı", "📚 Ödev Takibi", "📊 Deneme Puanı", 
-            "📑 Ders Konuları", "📝 Haftalık Analiz", "👨‍👩‍👦 Veli Bilgilendirme", 
+            "📑 Ders Konuları", "📝 Haftalık Analiz", "👨‍👩‍👦 Veli Bilgilendirme", "📆 Ajanda",
             "✏️ Güncelle", "🗑️ Sil"
         ]
 
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10 = st.tabs(sekme_listesi)
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab_ajanda, tab9, tab10 = st.tabs(sekme_listesi)
     
     # --- 1. PROFİL ---
     with tab1:
@@ -2441,8 +2441,59 @@ if not df.empty:
                 st.info("Bu öğrenci için henüz kaydedilmiş bir geçmiş rapor arşivi bulunmuyor. Gönderdiğiniz ve mühürlediğiniz raporlar burada listelenecektir.")
         else:
             st.error("🔒 **Giriş Yetkiniz Yok:** Bu alan sadece öğretmen kullanımı içindir. Veli bilgilendirme raporlarına erişim izniniz bulunmamaktadır.")
-            
-    # --- 8. GÜNCELLE ---
+
+    # --- 8. YENİ EKLENEN AJANDA SEKMESİ ---
+    with tab_ajanda:
+        st.markdown("### 📆 Öğrenci Ajandası & Hatırlatıcılar")
+        
+        if st.session_state['rol'] == "ADMIN":
+            with st.expander("➕ Yeni Ajanda Notu / Hatırlatıcı Ekle", expanded=False):
+                with st.form("ajanda_ekle_form", clear_on_submit=True):
+                    a_tarih = st.date_input("Tarih:")
+                    a_baslik = st.text_input("Başlık:", placeholder="Örn: Veli Toplantısı / Ek Ders / Ödev Kontrolü")
+                    a_icerik = st.text_area("Detay / İçerik:", placeholder="Hatırlatma veya toplantı notlarınızı buraya yazın...")
+                    
+                    if st.form_submit_button("Ajandaya Ekle", type="primary"):
+                        if a_baslik:
+                            try:
+                                ajanda_data = {
+                                    "ogrenci_id": int(secili_id),
+                                    "tarih": str(a_tarih),
+                                    "baslik": a_baslik,
+                                    "icerik": a_icerik
+                                }
+                                supabase.table("ajanda").insert(ajanda_data).execute()
+                                st.success("Not ajandaya başarıyla eklendi!")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Kayıt Hatası: {str(e)}")
+                        else:
+                            st.error("Lütfen başlık giriniz.")
+        else:
+            st.info("Aşağıda Emir Hoca tarafından sana özel eklenen ajanda notlarını ve hatırlatıcıları görebilirsin.")
+
+        # Kayıtlı Ajanda Listesi
+        st.markdown("#### 📌 Ajanda Kayıtları")
+        res_ajanda = supabase.table("ajanda").select("*").eq("ogrenci_id", secili_id).order("tarih", desc=False).execute()
+        df_ajanda = pd.DataFrame(res_ajanda.data) if res_ajanda.data else pd.DataFrame()
+        
+        if not df_ajanda.empty:
+            for idx, row in df_ajanda.iterrows():
+                with st.container(border=True):
+                    col_a1, col_a2 = st.columns([4, 1])
+                    with col_a1:
+                        st.markdown(f"**📅 {row.get('tarih', '')} | 📌 {row.get('baslik', '')}**")
+                        if row.get('icerik'):
+                            st.write(row.get('icerik'))
+                    with col_a2:
+                        if st.session_state['rol'] == "ADMIN":
+                            if st.button("🗑️ Sil", key=f"ajanda_sil_{row.get('id')}"):
+                                supabase.table("ajanda").delete().eq("id", row.get('id')).execute()
+                                st.rerun()
+        else:
+            st.info("Kayıtlı ajanda notu veya hatırlatıcı bulunmuyor.")
+
+    # --- 9. GÜNCELLE ---
     with tab9:
         if st.session_state['rol'] == "ADMIN":
             st.markdown("### ✏️ Öğrenci Bilgilerini Güncelle")
@@ -2486,7 +2537,7 @@ if not df.empty:
             st.error("🔒 **Giriş Yetkiniz Yok:** Bu alan sadece öğretmen kullanımı içindir. Bilgi güncelleme yetkiniz bulunmamaktadır.")
 
 
-    # --- 9. SİL ---
+    # --- 10. SİL ---
     with tab10:
         if st.session_state['rol'] == "ADMIN":
             st.markdown("### 🗑️ Öğrenciyi Sistemden Sil")
