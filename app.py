@@ -2450,7 +2450,27 @@ if not df.empty:
             with st.expander("➕ Yeni Ajanda Notu / Hatırlatıcı Ekle", expanded=False):
                 with st.form("ajanda_ekle_form", clear_on_submit=True):
                     a_tarih = st.date_input("Tarih:")
-                    a_baslik = st.text_input("Başlık:", placeholder="Örn: Veli Toplantısı / Ek Ders / Ödev Kontrolü")
+                    
+                    # BAŞLIK KISMI AÇILIR LİSTE (SELECTBOX) OLARAK GÜNCELLENDİ
+                    baslik_secenekleri = [
+                        "Koçluk Dersi",
+                        "Matematik Özel Ders",
+                        "Geometri Özel Ders", 
+                        "Fizik Özel Ders", 
+                        "Kimya Özel Ders", 
+                        "Biyoloji Özel Ders", 
+                        "Türkçe Özel Ders", 
+                        "Tarih Özel Ders", 
+                        "Coğrafya Özel Ders", 
+                        "Felsefe Özel Ders", 
+                        "İngilizce Özel Ders", 
+                        "Veli Toplantısı", 
+                        "Ödev Kontrolü", 
+                        "Genel Değerlendirme",
+                        "Diğer"
+                    ]
+                    a_baslik = st.selectbox("Başlık Seçin:", baslik_secenekleri)
+                    
                     a_icerik = st.text_area("Detay / İçerik:", placeholder="Hatırlatma veya toplantı notlarınızı buraya yazın...")
                     
                     if st.form_submit_button("Ajandaya Ekle", type="primary"):
@@ -2468,7 +2488,7 @@ if not df.empty:
                             except Exception as e:
                                 st.error(f"Kayıt Hatası: {str(e)}")
                         else:
-                            st.error("Lütfen başlık giriniz.")
+                            st.error("Lütfen başlık seçiniz.")
         else:
             st.info("Aşağıda Emir Hoca tarafından sana özel eklenen ajanda notlarını ve hatırlatıcıları görebilirsin.")
 
