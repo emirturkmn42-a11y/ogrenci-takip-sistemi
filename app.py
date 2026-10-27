@@ -2498,8 +2498,8 @@ if not df.empty:
             if muhasebe_modu:
                 st.info("👁️‍🗨️ **Gizli Mod Aktif:** Bakiye, tahsilat butonları ve finansal veriler şu an görünür durumda. Veli veya öğrenci giriş yaptığında bu alanı ASLA göremez.")
         
-        # Verileri önceden çekelim
-        res_ajanda = supabase.table("ajanda").select("*").eq("ogrenci_id", secili_id).order("tarih", desc=False).execute()
+        # Verileri önceden çekelim (Sıralama: En son eklenen en üstte çıksın diye "id" desc=True yapıldı)
+        res_ajanda = supabase.table("ajanda").select("*").eq("ogrenci_id", secili_id).order("id", desc=True).execute()
         df_ajanda = pd.DataFrame(res_ajanda.data) if res_ajanda.data else pd.DataFrame()
         
         # --- MİNİ MUHASEBE GÖSTERGE PANELİ (ŞALTER AÇIKSA GÖRÜNÜR) ---
@@ -2529,7 +2529,6 @@ if not df.empty:
             st.divider()
 
         # --- YENİ AJANDA / DERS KAYDI EKLEME FORMU ---
-        # Sadece öğretmen bu formu görebilir, veli/öğrenci ekranında bu alan tamamen kaybolur.
         if st.session_state['rol'] == "ADMIN":
             with st.expander("➕ Yeni Ajanda Notu / Ders Kaydı Ekle", expanded=False):
                 with st.form("ajanda_ekle_form", clear_on_submit=True):
@@ -2557,7 +2556,7 @@ if not df.empty:
                                     "baslik": a_baslik,
                                     "icerik": a_icerik,
                                     "ders_ucreti": float(ucret),
-                                    "alinan_miktar": 0.0 # Baştan sadece ders eklenir, para alınmadı kabul edilir.
+                                    "alinan_miktar": 0.0
                                 }
                                 supabase.table("ajanda").insert(ajanda_data).execute()
                                 st.success("Kayıt başarıyla eklendi!")
@@ -2567,7 +2566,6 @@ if not df.empty:
                         else:
                             st.error("Lütfen başlık seçiniz.")
         else:
-            # Veli veya öğrenci girdiğinde genişleyen "Yeni Kayıt" formu yerine sadece bu yazıyı görürler.
             st.info("Aşağıda Emir Hoca tarafından sana özel planlanan ders ve ajanda kayıtlarını görebilirsin.")
 
         # --- KAYITLI AJANDA VE DERS LİSTESİ ---
@@ -2577,14 +2575,21 @@ if not df.empty:
             for idx, row in df_ajanda.iterrows():
                 with st.container(border=True):
                     
-                    # Eğer muhasebe modu açıksa genişlik ayarı değişir, kapalıysa düz ajanda gibi görünür
                     if st.session_state['rol'] == "ADMIN" and muhasebe_modu:
                         col_a1, col_a2 = st.columns([3, 2])
                     else:
                         col_a1, col_a2 = st.columns([4, 1])
                         
                     with col_a1:
-                        st.markdown(f"**📅 {row.get('tarih', '')} | 📌 {row.get('baslik', '')}**")
+                        # Tarih formatını Türkçeye çevirme (YYYY-MM-DD -> DD.MM.YYYY)
+                        ham_tarih = str(row.get('tarih', ''))
+                        if "-" in ham_tarih and len(ham_tarih) >= 10:
+                            parcalar = ham_tarih.split("-")
+                            gosterilecek_tarih = f"{parcalar[2]}.{parcalar[1]}.{parcalar[0]}"
+                        else:
+                            gosterilecek_tarih = ham_tarih
+
+                        st.markdown(f"**📅 {gosterilecek_tarih} | 📌 {row.get('baslik', '')}**")
                         if row.get('icerik'):
                             st.write(row.get('icerik'))
                             
@@ -2598,16 +2603,13 @@ if not df.empty:
                                 
                                 st.markdown(f"**Ücret:** {d_ucret:g} ₺ | **Alınan:** {d_alinan:g} ₺")
                                 
-                                # Tek tıkla onaylama butonu
                                 if d_ucret > 0 and kalan > 0:
                                     if st.button(f"✅ Tamamını Tahsil Et", key=f"tahsil_{row.get('id')}", type="primary", use_container_width=True):
-                                        # Butona basılınca alınan miktarı ders ücretine eşitler (hepsini tahsil eder)
                                         supabase.table("ajanda").update({"alinan_miktar": d_ucret}).eq("id", row.get('id')).execute()
                                         st.rerun()
                                 elif d_ucret > 0 and kalan <= 0:
                                     st.success("✅ Ödendi", icon="✔️")
                                     
-                                # Gizli Düzenleme / Silme Menüsü
                                 with st.popover("⚙️ Düzenle / Sil", use_container_width=True):
                                     with st.form(key=f"odeme_form_{row.get('id')}"):
                                         g_ucret = st.number_input("Ders Ücreti:", value=int(d_ucret), key=f"u_{row.get('id')}")
