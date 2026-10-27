@@ -1415,13 +1415,25 @@ if not df.empty:
                 st.info("Henüz eklenmiş bir kaynak bulunmuyor.")
     # --- 3. ÇALIŞMA PROGRAMI ---
     with tab3:
-        # SİSTEM ARAYÜZÜ (STREAMLİT) İÇİN UZUN YAZILARI ALT SATIRA KAYDIRMA DÜZELTMESİ
+        # SİSTEM ARAYÜZÜ (STREAMLİT) İÇİN MODERN TASARIM VE UZUN YAZI DÜZELTMESİ
         st.markdown("""
             <style>
             div[data-testid="stCheckbox"] label p {
                 white-space: normal !important;
                 word-break: break-word !important;
                 font-size: 14px;
+            }
+            /* Form kutularını daha modern ve şık göstermek için */
+            div[data-testid="stForm"] {
+                background-color: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                padding: 20px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            }
+            textarea {
+                background-color: #ffffff !important;
+                border-radius: 8px !important;
             }
             </style>
         """, unsafe_allow_html=True)
@@ -1431,24 +1443,57 @@ if not df.empty:
         # --- 1. YENİ PROGRAM HAZIRLAMA (SADECE ADMİN GÖRÜR) ---
         if st.session_state['rol'] == "ADMIN":
             with st.expander("➕ Yeni Program Hazırla", expanded=False):
-                st.info("💡 **İpucu:** Görevleri alt alta yazın (Örn: Mat 50 Soru). Sistem bunları otomatik olarak tıklanabilir kutucuklara dönüştürecektir.")
+                
+                # GEÇEN HAFTAYI KOPYALAMA İÇİN GEÇİCİ HAFIZA OLUŞTURMA
+                hafiza_keys = ['pzt', 'sal', 'car', 'per', 'cum', 'cmt', 'paz', 'not']
+                for k in hafiza_keys:
+                    key_name = f"draft_{k}_{secili_id}"
+                    if key_name not in st.session_state:
+                        st.session_state[key_name] = ""
+
+                col_ipucu, col_buton = st.columns([2, 1], vertical_alignment="center")
+                with col_ipucu:
+                    st.info("💡 **İpucu:** Görevleri alt alta yazın (Örn: Mat 50 Soru).")
+                with col_buton:
+                    if st.button("🔄 Geçen Haftayı Kopyala", use_container_width=True, type="secondary"):
+                        res_last = supabase.table("calisma_programi").select("*").eq("ogrenci_id", secili_id).order("id", desc=True).limit(1).execute()
+                        if res_last.data:
+                            last = res_last.data[0]
+                            st.session_state[f"draft_pzt_{secili_id}"] = last.get('pazartesi', '')
+                            st.session_state[f"draft_sal_{secili_id}"] = last.get('sali', '')
+                            st.session_state[f"draft_car_{secili_id}"] = last.get('carsamba', '')
+                            st.session_state[f"draft_per_{secili_id}"] = last.get('persembe', '')
+                            st.session_state[f"draft_cum_{secili_id}"] = last.get('cuma', '')
+                            st.session_state[f"draft_cmt_{secili_id}"] = last.get('cumartesi', '')
+                            st.session_state[f"draft_paz_{secili_id}"] = last.get('pazar', '')
+                            st.session_state[f"draft_not_{secili_id}"] = last.get('haftalik_not', '')
+                            st.rerun()
+                        else:
+                            st.warning("Bu öğrenci için kopyalanacak geçmiş bir hafta bulunamadı.")
+
                 secili_hafta = st.text_input("Tarih Aralığı Girin:", value="28.09.2026 - 05.10.2026", key="h_input")
                 
-                with st.form("program_form", clear_on_submit=True):
+                with st.form("program_form", clear_on_submit=False): # clear_on_submit=False yapıyoruz ki kopyalama çalışsın
+                    st.markdown("#### 🎯 Günlük Görev Dağılımı")
                     c_g1, c_g2 = st.columns(2)
                     with c_g1:
-                        pazartesi = st.text_area("Pazartesi")
-                        carsamba = st.text_area("Çarşamba")
-                        cuma = st.text_area("Cuma")
-                        pazar = st.text_area("Pazar")
+                        pazartesi = st.text_area("📌 Pazartesi", value=st.session_state[f"draft_pzt_{secili_id}"], height=110)
+                        carsamba = st.text_area("📌 Çarşamba", value=st.session_state[f"draft_car_{secili_id}"], height=110)
+                        cuma = st.text_area("📌 Cuma", value=st.session_state[f"draft_cum_{secili_id}"], height=110)
+                        pazar = st.text_area("🍀 Pazar", value=st.session_state[f"draft_paz_{secili_id}"], height=110)
                     with c_g2:
-                        sali = st.text_area("Salı")
-                        persembe = st.text_area("Perşembe")
-                        cumartesi = st.text_area("Cumartesi")
-                        haftalik_not = st.text_area("Koçluk Notu")
+                        sali = st.text_area("📌 Salı", value=st.session_state[f"draft_sal_{secili_id}"], height=110)
+                        persembe = st.text_area("📌 Perşembe", value=st.session_state[f"draft_per_{secili_id}"], height=110)
+                        cumartesi = st.text_area("🔥 Cumartesi", value=st.session_state[f"draft_cmt_{secili_id}"], height=110)
+                        haftalik_not = st.text_area("💡 Koçluk Notu", value=st.session_state[f"draft_not_{secili_id}"], height=110, placeholder="Öğrenciye özel motivasyon veya dikkat etmesi gerekenler...")
 
-                    if st.form_submit_button("Programı Kaydet"):
+                    if st.form_submit_button("💾 Programı Kaydet", type="primary", use_container_width=True):
                         program_kaydet(secili_id, secili_hafta, pazartesi, sali, carsamba, persembe, cuma, cumartesi, pazar, haftalik_not)
+                        
+                        # Kaydettikten sonra hafızayı temizle
+                        for k in hafiza_keys:
+                            st.session_state[f"draft_{k}_{secili_id}"] = ""
+                            
                         st.success("Program başarıyla kaydedildi!")
                         st.rerun()
 
@@ -1567,12 +1612,12 @@ if not df.empty:
 
                     st.divider()
 
-                    # --- PDF VE WHATSAPP TASARIMI ---
+                    # --- PDF VE WHATSAPP TASARIMI (NORMAL YAZI FONTU İLE GÜNCELLENDİ) ---
                     def wp_formatla(metin):
                         return str(metin).replace("[X] ", "✅ ").replace("[ ] ", "⬜ ") if metin else ""
                     
                     def html_formatla(metin):
-                        if not metin: return '<div style="color:#a8a29e; font-style:italic; font-family:\'Kalam\', cursive; font-size:14px; margin-top:5px;">Serbest Gün...</div>'
+                        if not metin: return '<div style="color:#94a3b8; font-style:italic; font-family:\'Segoe UI\', Tahoma, Geneva, Verdana, sans-serif; font-size:14px; margin-top:5px;">Serbest Gün...</div>'
                         satirlar = str(metin).split('\n')
                         html_liste = '<ul class="task-list">'
                         for satir in satirlar:
@@ -1601,33 +1646,33 @@ if not df.empty:
                     if tel_clean.startswith("0"): tel_clean = "90" + tel_clean[1:]
                     wp_url = f"https://wa.me/{tel_clean}?text={urllib.parse.quote(wp_text)}"
                     
-                    # ESNEYEBİLEN VE YAZILARI KESMEYEN KUSURSUZ 4x2 PDF IZGARASI
+                    # ESNEYEBİLEN VE YAZILARI KESMEYEN KUSURSUZ 4x2 PDF IZGARASI (EL YAZISI FONTU KALDIRILDI)
                     html_icerik = f"""
                     <!DOCTYPE html>
                     <html lang="tr">
                     <head>
                         <meta charset="UTF-8">
                         <title>{secili_ogrenci['ad_soyad']} - {row['hafta_adi']}</title>
-                        <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+                        <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;800;900&display=swap" rel="stylesheet">
                         <style>
                             * {{ box-sizing: border-box; }}
-                            body {{ background-color: #fcfbf8; font-family: 'Nunito', sans-serif; margin: 0; padding: 20px; color: #333; }}
+                            body {{ background-color: #fcfbf8; font-family: 'Nunito', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; color: #1e293b; }}
                             .container {{ width: 100%; max-width: 1200px; margin: auto; background-color: #fff; padding: 20px; border-radius: 12px; border: 2px solid #d4af37; box-shadow: 0 5px 15px rgba(212, 175, 55, 0.1); display: flex; flex-direction: column; }}
                             .header {{ text-align: center; border-bottom: 2px solid #d4af37; padding-bottom: 10px; margin-bottom: 15px; }}
                             .header h1 {{ margin: 0; color: #b8860b; font-size: 24px; font-weight: 900; letter-spacing: 1px; }}
-                            .header p {{ margin: 3px 0 0 0; font-size: 14px; font-weight: 800; color: #78716c; }}
+                            .header p {{ margin: 3px 0 0 0; font-size: 15px; font-weight: 800; color: #475569; }}
                             .grid-container {{ display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: auto auto; gap: 10px; align-items: stretch; }}
-                            .gun-kutu {{ border: 1.5px dashed #c5a059; border-radius: 8px; padding: 10px; background-color: #fefcf8; display: flex; flex-direction: column; }}
-                            .gun-baslik {{ font-size: 15px; font-weight: 900; color: #b8860b; margin-bottom: 6px; border-bottom: 1px solid #f3e8d3; padding-bottom: 4px; }}
+                            .gun-kutu {{ border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 12px; background-color: #f8fafc; display: flex; flex-direction: column; }}
+                            .gun-baslik {{ font-size: 15px; font-weight: 900; color: #b8860b; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }}
                             .task-list {{ list-style: none; padding: 0; margin: 0; flex: 1; }}
-                            .task {{ display: flex; align-items: flex-start; margin-bottom: 5px; font-family: 'Kalam', cursive; font-size: 14px; color: #444; line-height: 1.3; }}
-                            .task.done {{ text-decoration: line-through; color: #a8a29e; }}
+                            .task {{ display: flex; align-items: flex-start; margin-bottom: 6px; font-size: 14px; font-weight: 600; color: #334155; line-height: 1.4; }}
+                            .task.done {{ text-decoration: line-through; color: #94a3b8; }}
                             .check-box {{ display: inline-block; width: 14px; height: 14px; border: 1.5px solid #d4af37; border-radius: 3px; text-align: center; line-height: 14px; font-size: 10px; margin-right: 6px; margin-top: 2px; flex-shrink: 0; font-family: sans-serif; }}
                             .check-box.checked {{ background-color: #d4af37; color: #fff; font-weight: bold; border-color: #d4af37; }}
                             .check-box.empty {{ background-color: #fff; }}
                             .task-text {{ flex: 1; word-wrap: break-word; word-break: break-word; hyphens: auto; }}
-                            .not-kutu {{ border: 2px solid #b8860b; border-radius: 8px; padding: 10px; background-color: #fff9e6; display: flex; flex-direction: column; }}
-                            .not-metin {{ font-family: 'Kalam', cursive; font-size: 15px; color: #996515; white-space: pre-wrap; flex: 1; word-wrap: break-word; }}
+                            .not-kutu {{ border: 2px solid #b8860b; border-radius: 8px; padding: 12px; background-color: #fffbeb; display: flex; flex-direction: column; }}
+                            .not-metin {{ font-size: 15px; font-weight: 600; color: #92400e; white-space: pre-wrap; flex: 1; word-wrap: break-word; }}
                             
                             @page {{ size: A4 landscape; margin: 0 !important; }}
                             @media print {{ 
@@ -2444,36 +2489,72 @@ if not df.empty:
 
     # --- 8. YENİ EKLENEN AJANDA SEKMESİ ---
     with tab_ajanda:
-        st.markdown("### 📆 Öğrenci Ajandası & Hatırlatıcılar")
+        st.markdown("### 📆 Öğrenci Ajandası")
         
+        # --- GİZLİLİK ŞALTERİ (SADECE ADMİN) ---
+        muhasebe_modu = False
         if st.session_state['rol'] == "ADMIN":
-            with st.expander("➕ Yeni Ajanda Notu / Hatırlatıcı Ekle", expanded=False):
+            muhasebe_modu = st.toggle("💼 Gizli Muhasebe Panelini Aç (Veli ve Öğrenciden Gizlenir)")
+            if muhasebe_modu:
+                st.info("👁️‍🗨️ **Gizli Mod Aktif:** Şu an paneldeki finansal veriler görünür durumda. Veli yanınızdayken bu şalteri kapalı tutunuz.")
+        
+        # Verileri önceden çekelim
+        res_ajanda = supabase.table("ajanda").select("*").eq("ogrenci_id", secili_id).order("tarih", desc=False).execute()
+        df_ajanda = pd.DataFrame(res_ajanda.data) if res_ajanda.data else pd.DataFrame()
+        
+        # --- MİNİ MUHASEBE GÖSTERGE PANELİ (ŞALTER AÇIKSA GÖRÜNÜR) ---
+        if muhasebe_modu:
+            st.markdown("#### 💰 Finansal Özet ve Hakediş Durumu")
+            
+            toplam_ders = 0
+            toplam_ucret = 0
+            toplam_alinan = 0
+            
+            if not df_ajanda.empty:
+                # Güvenli matematiksel dönüşüm
+                if 'ders_ucreti' in df_ajanda.columns:
+                    df_ajanda['ders_ucreti'] = pd.to_numeric(df_ajanda['ders_ucreti'], errors='coerce').fillna(0)
+                    df_ajanda['alinan_miktar'] = pd.to_numeric(df_ajanda['alinan_miktar'], errors='coerce').fillna(0)
+                    
+                    toplam_ders = len(df_ajanda[df_ajanda['ders_ucreti'] > 0])
+                    toplam_ucret = df_ajanda['ders_ucreti'].sum()
+                    toplam_alinan = df_ajanda['alinan_miktar'].sum()
+            
+            kalan_alacak = float(toplam_ucret) - float(toplam_alinan)
+            
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("📚 Ücretli Ders Sayısı", f"{toplam_ders}")
+            m2.metric("💵 Toplam Hakediş", f"{toplam_ucret:g} ₺")
+            m3.metric("✅ Alınan Ödeme", f"{toplam_alinan:g} ₺")
+            m4.metric("⏳ Bekleyen Bakiye", f"{kalan_alacak:g} ₺", delta=f"{-kalan_alacak:g} ₺" if kalan_alacak > 0 else "Tamamen Ödendi", delta_color="inverse" if kalan_alacak > 0 else "normal")
+            st.divider()
+
+        # --- YENİ AJANDA / DERS KAYDI EKLEME FORMU ---
+        if st.session_state['rol'] == "ADMIN":
+            with st.expander("➕ Yeni Ajanda Notu / Ders Kaydı Ekle", expanded=False):
                 with st.form("ajanda_ekle_form", clear_on_submit=True):
                     a_tarih = st.date_input("Tarih:")
                     
-                    # BAŞLIK KISMI AÇILIR LİSTE (SELECTBOX) OLARAK GÜNCELLENDİ
                     baslik_secenekleri = [
-                        "Koçluk Dersi",
-                        "Online Ders",
-                        "Matematik Özel Ders",
-                        "Geometri Özel Ders", 
-                        "Fizik Özel Ders", 
-                        "Kimya Özel Ders", 
-                        "Biyoloji Özel Ders", 
-                        "Türkçe Özel Ders", 
-                        "Tarih Özel Ders", 
-                        "Coğrafya Özel Ders", 
-                        "Felsefe Özel Ders", 
-                        "İngilizce Özel Ders", 
-                        "Veli Toplantısı", 
-                        "Ödev Kontrolü", 
-                        "Genel Değerlendirme",
-                        "Diğer"
+                        "Koçluk Dersi", "Online Ders", "Matematik Özel Ders", "Geometri Özel Ders", 
+                        "Fizik Özel Ders", "Kimya Özel Ders", "Biyoloji Özel Ders", "Türkçe Özel Ders", 
+                        "Tarih Özel Ders", "Coğrafya Özel Ders", "Felsefe Özel Ders", "İngilizce Özel Ders", 
+                        "Veli Toplantısı", "Ödev Kontrolü", "Genel Değerlendirme", "Diğer"
                     ]
                     a_baslik = st.selectbox("Başlık Seçin:", baslik_secenekleri)
+                    a_icerik = st.text_area("Detay / Notlar:", placeholder="Ders işleyişi hakkında notlar (Örn: Logaritma işlendi, gayet iyiydi)...")
                     
-                    a_icerik = st.text_area("Detay / İçerik:", placeholder="Hatırlatma veya toplantı notlarınızı buraya yazın...")
-                    
+                    # Şalter açıksa kayıt esnasında para girebilir, kapalıysa bu alan gizlenir ve paralar 0 olarak sisteme kaydolur.
+                    ucret = 0
+                    alinan = 0
+                    if muhasebe_modu:
+                        st.markdown("##### 💳 Finansal Detaylar")
+                        col_u1, col_u2 = st.columns(2)
+                        with col_u1:
+                            ucret = st.number_input("Bu Dersin Ücreti (TL):", min_value=0, value=0, step=50)
+                        with col_u2:
+                            alinan = st.number_input("Şu An Peşin Alınan (TL):", min_value=0, value=0, step=50)
+                            
                     if st.form_submit_button("Ajandaya Ekle", type="primary"):
                         if a_baslik:
                             try:
@@ -2481,38 +2562,69 @@ if not df.empty:
                                     "ogrenci_id": int(secili_id),
                                     "tarih": str(a_tarih),
                                     "baslik": a_baslik,
-                                    "icerik": a_icerik
+                                    "icerik": a_icerik,
+                                    "ders_ucreti": float(ucret),
+                                    "alinan_miktar": float(alinan)
                                 }
                                 supabase.table("ajanda").insert(ajanda_data).execute()
-                                st.success("Not ajandaya başarıyla eklendi!")
+                                st.success("Kayıt başarıyla eklendi!")
                                 st.rerun()
                             except Exception as e:
                                 st.error(f"Kayıt Hatası: {str(e)}")
                         else:
                             st.error("Lütfen başlık seçiniz.")
         else:
-            st.info("Aşağıda Emir Hoca tarafından sana özel eklenen ajanda notlarını ve hatırlatıcıları görebilirsin.")
+            st.info("Aşağıda sana özel planlanan ders ve ajanda kayıtlarını görebilirsin.")
 
-        # Kayıtlı Ajanda Listesi
+        # --- KAYITLI AJANDA VE DERS LİSTESİ ---
         st.markdown("#### 📌 Ajanda Kayıtları")
-        res_ajanda = supabase.table("ajanda").select("*").eq("ogrenci_id", secili_id).order("tarih", desc=False).execute()
-        df_ajanda = pd.DataFrame(res_ajanda.data) if res_ajanda.data else pd.DataFrame()
         
         if not df_ajanda.empty:
             for idx, row in df_ajanda.iterrows():
                 with st.container(border=True):
-                    col_a1, col_a2 = st.columns([4, 1])
+                    
+                    # Eğer muhasebe modu açıksa ekranı 3'e böl (finans güncelleme butonu için), kapalıysa 2'ye böl
+                    if muhasebe_modu:
+                        col_a1, col_a2, col_a3 = st.columns([3, 2, 1])
+                    else:
+                        col_a1, col_a3 = st.columns([4, 1])
+                        
                     with col_a1:
                         st.markdown(f"**📅 {row.get('tarih', '')} | 📌 {row.get('baslik', '')}**")
                         if row.get('icerik'):
                             st.write(row.get('icerik'))
-                    with col_a2:
+                            
+                    # Sadece gizli şalter açıkken görünen finansal detay ve tahsilat popover'ı
+                    if muhasebe_modu:
+                        with col_a2:
+                            d_ucret = float(row.get('ders_ucreti', 0) or 0)
+                            d_alinan = float(row.get('alinan_miktar', 0) or 0)
+                            kalan = d_ucret - d_alinan
+                            
+                            if d_ucret > 0:
+                                st.markdown(f"**Ücret:** {d_ucret:g} ₺ | **Alınan:** {d_alinan:g} ₺")
+                                if kalan > 0:
+                                    st.markdown(f"<span style='color:#e74c3c; font-weight:bold;'>⏳ Bakiye: {kalan:g} ₺</span>", unsafe_allow_html=True)
+                                else:
+                                    st.markdown("<span style='color:#2ecc71; font-weight:bold;'>✅ Ödendi</span>", unsafe_allow_html=True)
+                            else:
+                                st.caption("Ücretsiz / Bilgi Yok")
+                                
+                            with st.popover("💳 Ödeme Ekle/Düzenle", use_container_width=True):
+                                with st.form(key=f"odeme_form_{row.get('id')}"):
+                                    g_ucret = st.number_input("Ders Ücreti (TL):", value=int(d_ucret), key=f"u_{row.get('id')}")
+                                    g_alinan = st.number_input("Toplam Alınan (TL):", value=int(d_alinan), key=f"a_{row.get('id')}")
+                                    if st.form_submit_button("Güncelle", use_container_width=True, type="primary"):
+                                        supabase.table("ajanda").update({"ders_ucreti": g_ucret, "alinan_miktar": g_alinan}).eq("id", row.get('id')).execute()
+                                        st.rerun()
+
+                    with col_a3:
                         if st.session_state['rol'] == "ADMIN":
-                            if st.button("🗑️ Sil", key=f"ajanda_sil_{row.get('id')}"):
+                            if st.button("🗑️ Sil", key=f"ajanda_sil_{row.get('id')}", use_container_width=True):
                                 supabase.table("ajanda").delete().eq("id", row.get('id')).execute()
                                 st.rerun()
         else:
-            st.info("Kayıtlı ajanda notu veya hatırlatıcı bulunmuyor.")
+            st.info("Kayıtlı ajanda notu bulunmuyor.")
 
     # --- 9. GÜNCELLE ---
     with tab9:
