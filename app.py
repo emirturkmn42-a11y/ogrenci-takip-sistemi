@@ -991,7 +991,6 @@ MOTIVASYON_SOZLERI = [
 ("Kendine inanmadığın günlerde bile çalışmaya devam et.", "Anonim"),
 ("Başarı, yetenekten önce süreklilik ister.", "Anonim"),
 ("Bir gün değil, her gün çalış.", "Anonim"),
-("Hedefine ulaşmak istiyorsan, hedefin için bugün bir şey yap.", "Anonim"),
 ("Hiçbir soru, üzerinde yeterince düşündüğün zaman sonsuza kadar zor kalmaz.", "Anonim"),
 ("Her deneme seni sonuca biraz daha yaklaştırır.", "Anonim"),
 ("Bugünkü küçük fedakârlıklar, yarının büyük sonuçlarını oluşturur.", "Anonim"),
