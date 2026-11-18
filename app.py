@@ -862,26 +862,24 @@ def ogrenci_ekle(ogrenci_no, ad, tur_str, tel, v_ad, v_tel, hedef):
         ogr_id = res.data[0]['id']
         konulari_ata(ogr_id, tur_str)
 
-def deneme_ekle(ogrenci_id, deneme_adi, deneme_turu, kapsam, netler, toplam_soru):
-    # Toplam neti hesapla
-    toplam_net = sum(netler.values()) if netler else 0.0
-    
-    # Pandas kullanarak tarih sorununu tamamen çözüyoruz
+def deneme_ekle(ogrenci_id, deneme_adi, deneme_turu, kapsam, net_sozlugu, cozulen_soru):
     tarih_bugun = pd.Timestamp.now().strftime("%Y-%m-%d")
+    netler_json = json.dumps(net_sozlugu, ensure_ascii=False)
+    toplam_net = sum(net_sozlugu.values()) if net_sozlugu else 0.0
     
-    veri = {
+    data = {
         "ogrenci_id": int(ogrenci_id),
-        "deneme_adi": deneme_adi,
-        "deneme_turu": deneme_turu,
-        "kapsam": kapsam,
-        "netler_json": json.dumps(netler, ensure_ascii=False),
+        "deneme_adi": str(deneme_adi),
+        "kapsam": str(kapsam),
+        "deneme_turu": str(deneme_turu),
+        "netler_json": netler_json,
         "toplam_net": float(toplam_net),
-        "toplam_soru": int(toplam_soru),
+        "raporlandi": 0,
         "tarih": tarih_bugun,
-        "raporlandi": 0
+        "cozulen_soru": int(cozulen_soru)
     }
     
-    supabase.table("denemeler").insert(veri).execute()
+    supabase.table("denemeler").insert(data).execute()
 
 def ogrenci_sil(ogrenci_id):
     supabase.table("denemeler").delete().eq("ogrenci_id", ogrenci_id).execute()
