@@ -1739,24 +1739,55 @@ if not df.empty:
             with st.expander("➕ Yeni Program Hazırla", expanded=False):
                 for k in hafiza_keys:
                     ta_key = f"ta_{k}_{secili_id}"
-                    draft_key = f"draft_{k}_{secili_id}"
                     if ta_key not in st.session_state:
-                        st.session_state[ta_key] = st.session_state.get(draft_key, "")
+                        st.session_state[ta_key] = ""
+
+                uyari_key = f"blok_uyari_{secili_id}"
+                if uyari_key not in st.session_state:
+                    st.session_state[uyari_key] = ""
+
+                def gecen_haftayi_kopyala_cb(ogr_id):
+                    res_last = supabase.table("calisma_programi").select("*").eq("ogrenci_id", ogr_id).order("id", desc=True).limit(1).execute()
+                    if res_last.data:
+                        last = res_last.data[0]
+                        for g_key, _, _, _ in gun_tanimi:
+                            st.session_state[f"ta_{g_key}_{ogr_id}"] = last.get(g_key, "") or ""
+                        st.session_state[f"ta_not_{ogr_id}"] = last.get("haftalik_not", "") or ""
+                        st.session_state[f"blok_uyari_{ogr_id}"] = ""
+                    else:
+                        st.session_state[f"blok_uyari_{ogr_id}"] = "Bu öğrenci için kopyalanacak geçmiş bir hafta bulunamadı."
+
+                def saat_blogu_ekle_cb(ogr_id):
+                    sec_gun = st.session_state.get(f"blok_gun_{ogr_id}", "pazartesi")
+                    b_saat = st.session_state.get(f"blok_bas_{ogr_id}", "17:00")
+                    e_saat = st.session_state.get(f"blok_bit_{ogr_id}", "17:45")
+                    b_tur = st.session_state.get(f"blok_tur_{ogr_id}", "Türkçe")
+                    b_detay = (st.session_state.get(f"blok_detay_{ogr_id}", "") or "").strip()
+
+                    if saat_secenekleri.index(e_saat) <= saat_secenekleri.index(b_saat):
+                        st.session_state[f"blok_uyari_{ogr_id}"] = "Bitiş saati başlangıç saatinden sonra olmalıdır."
+                        return
+
+                    st.session_state[f"blok_uyari_{ogr_id}"] = ""
+                    detay_kismi = f": {b_detay}" if b_detay else ""
+                    yeni_blok = f"{b_saat} - {e_saat} | {b_tur}{detay_kismi}"
+                    hedef_ta_key = f"ta_{sec_gun}_{ogr_id}"
+                    mevcut_metin = st.session_state.get(hedef_ta_key, "") or ""
+                    st.session_state[hedef_ta_key] = f"{mevcut_metin}\n{yeni_blok}".strip() if mevcut_metin.strip() else yeni_blok
+                    st.session_state[f"blok_detay_{ogr_id}"] = ""
 
                 col_ipucu, col_buton = st.columns([2, 1], vertical_alignment="center")
                 with col_ipucu:
-                    st.info("💡 **İpucu:** Saat bloğunu eklediğinde seçtiğin günün kutusuna anında düşer; alttaki A4 önizlemede taşma durumunu canlı görürsün.")
+                    st.info("💡 **İpucu:** Saat bloğunu eklediğinde seçtiğin gün kutusuna düşer; alttaki kutularda istediğin gibi elle düzenleme veya silme yapabilirsin.")
                 with col_buton:
-                    if st.button("🔄 Geçen Haftayı Kopyala", use_container_width=True, type="secondary"):
-                        res_last = supabase.table("calisma_programi").select("*").eq("ogrenci_id", secili_id).order("id", desc=True).limit(1).execute()
-                        if res_last.data:
-                            last = res_last.data[0]
-                            for g_key, _, _, _ in gun_tanimi:
-                                st.session_state[f"ta_{g_key}_{secili_id}"] = last.get(g_key, "") or ""
-                            st.session_state[f"ta_not_{secili_id}"] = last.get("haftalik_not", "") or ""
-                            st.rerun()
-                        else:
-                            st.warning("Bu öğrenci için kopyalanacak geçmiş bir hafta bulunamadı.")
+                    st.button(
+                        "🔄 Geçen Haftayı Kopyala",
+                        use_container_width=True,
+                        type="secondary",
+                        key=f"btn_kopyala_{secili_id}",
+                        on_click=gecen_haftayi_kopyala_cb,
+                        args=(secili_id,)
+                    )
 
                 bas_tarih_str = pd.Timestamp.now().strftime("%d.%m.%Y")
                 bit_tarih_str = (pd.Timestamp.now() + pd.Timedelta(days=6)).strftime("%d.%m.%Y")
@@ -1766,7 +1797,7 @@ if not df.empty:
                     st.markdown("##### ⏱️ Hızlı Saat Aralığı & Görev Bloğu Ekle")
                     b_c1, b_c2, b_c3 = st.columns([1.4, 1, 1])
                     with b_c1:
-                        blok_gun = st.selectbox(
+                        st.selectbox(
                             "Gün Seç:",
                             options=[g[0] for g in gun_tanimi],
                             format_func=lambda x: dict((g[0], g[1]) for g in gun_tanimi)[x],
@@ -1774,14 +1805,14 @@ if not df.empty:
                         )
                     with b_c2:
                         idx_bas = saat_secenekleri.index("17:00") if "17:00" in saat_secenekleri else 0
-                        bas_saat = st.selectbox("Başlangıç (15 dk):", saat_secenekleri, index=idx_bas, key=f"blok_bas_{secili_id}")
+                        st.selectbox("Başlangıç (15 dk):", saat_secenekleri, index=idx_bas, key=f"blok_bas_{secili_id}")
                     with b_c3:
                         idx_bit = saat_secenekleri.index("17:45") if "17:45" in saat_secenekleri else 0
-                        bit_saat = st.selectbox("Bitiş (15 dk):", saat_secenekleri, index=idx_bit, key=f"blok_bit_{secili_id}")
+                        st.selectbox("Bitiş (15 dk):", saat_secenekleri, index=idx_bit, key=f"blok_bit_{secili_id}")
 
                     b_d1, b_d2 = st.columns([1.3, 2.7])
                     with b_d1:
-                        blok_tur = st.selectbox(
+                        st.selectbox(
                             "Çalışma Türü:",
                             [
                                 "Türkçe", "Matematik", "Geometri", "Fizik",
@@ -1792,25 +1823,27 @@ if not df.empty:
                             key=f"blok_tur_{secili_id}"
                         )
                     with b_d2:
-                        blok_detay = st.text_input(
+                        st.text_input(
                             "İçerik / Video Sayısı & Süre Notu:",
                             placeholder="Örn: Paragraf kitabından 20 soru veya Sözcükte Anlam 2 Video (56.58 dk)",
                             key=f"blok_detay_{secili_id}"
                         )
 
-                    if st.button("➕ Saat Bloğunu İlgili Güne Ekle", use_container_width=True, type="primary"):
-                        if saat_secenekleri.index(bit_saat) <= saat_secenekleri.index(bas_saat):
-                            st.warning("Bitiş saati başlangıç saatinden sonra olmalıdır.")
-                        else:
-                            detay_kismi = f": {blok_detay.strip()}" if blok_detay.strip() else ""
-                            yeni_blok = f"{bas_saat} - {bit_saat} | {blok_tur}{detay_kismi}"
-                            hedef_ta_key = f"ta_{blok_gun}_{secili_id}"
-                            mevcut_metin = st.session_state.get(hedef_ta_key, "") or ""
-                            st.session_state[hedef_ta_key] = f"{mevcut_metin}\n{yeni_blok}".strip() if mevcut_metin.strip() else yeni_blok
-                            st.rerun()
+                    if st.session_state.get(uyari_key):
+                        st.warning(st.session_state[uyari_key])
+
+                    st.button(
+                        "➕ Saat Bloğunu İlgili Güne Ekle",
+                        use_container_width=True,
+                        type="primary",
+                        key=f"btn_blok_ekle_{secili_id}",
+                        on_click=saat_blogu_ekle_cb,
+                        args=(secili_id,)
+                    )
 
                 with st.form("program_form", clear_on_submit=False):
                     st.markdown("#### 🎯 Günlük Görev Dağılımı")
+                    st.caption("Kutuların içine doğrudan tıklayıp istediğin satırı silebilir, değiştirebilir veya kendi notunu ekleyebilirsin.")
                     c_g1, c_g2 = st.columns(2)
                     gun_degerleri = {}
 
@@ -1822,19 +1855,19 @@ if not df.empty:
                         for g_k in sol_gunler:
                             gun_degerleri[g_k] = st.text_area(
                                 baslik_haritasi[g_k],
-                                height=115,
+                                height=120,
                                 key=f"ta_{g_k}_{secili_id}"
                             )
                     with c_g2:
                         for g_k in sag_gunler:
                             gun_degerleri[g_k] = st.text_area(
                                 baslik_haritasi[g_k],
-                                height=115,
+                                height=120,
                                 key=f"ta_{g_k}_{secili_id}"
                             )
                         haftalik_not = st.text_area(
                             "💡 Koçluk Notu",
-                            height=115,
+                            height=120,
                             placeholder="Öğrenciye özel motivasyon veya dikkat etmesi gerekenler...",
                             key=f"ta_not_{secili_id}"
                         )
@@ -1854,7 +1887,7 @@ if not df.empty:
                         )
                         for k in hafiza_keys:
                             st.session_state[f"ta_{k}_{secili_id}"] = ""
-                            st.session_state[f"draft_{k}_{secili_id}"] = ""
+                        st.session_state[uyari_key] = ""
                         st.success("Program başarıyla kaydedildi!")
                         st.rerun()
 
