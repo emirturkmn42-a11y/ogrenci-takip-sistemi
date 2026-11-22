@@ -1520,8 +1520,8 @@ if not df.empty:
                         blok_tur = st.selectbox(
                             "Çalışma Türü:",
                             [
-                                "Türkçe Video", "Matematik Video", "Geometri Video", "Fizik Video",
-                                "Kimya Video", "Biyoloji Video", "Tarih Video", "Coğrafya Video",
+                                "Türkçe", "Matematik", "Geometri", "Fizik",
+                                "Kimya", "Biyoloji", "Tarih", "Coğrafya",
                                 "Soru Çözümü", "Deneme Analizi", "Konu Tekrarı", "Mola"
                             ],
                             key=f"blok_tur_{secili_id}"
