@@ -1422,7 +1422,6 @@ if not df.empty:
                 st.info("Henüz eklenmiş bir kaynak bulunmuyor.")
     # --- 3. ÇALIŞMA PROGRAMI ---
     with tab3:
-        # SİSTEM ARAYÜZÜ (STREAMLİT) İÇİN MODERN TASARIM VE UZUN YAZI DÜZELTMESİ
         st.markdown("""
             <style>
             div[data-testid="stCheckbox"] label p {
@@ -1430,7 +1429,6 @@ if not df.empty:
                 word-break: break-word !important;
                 font-size: 14px;
             }
-            /* Form kutularını daha modern ve şık göstermek için */
             div[data-testid="stForm"] {
                 background-color: #f8fafc;
                 border: 1px solid #e2e8f0;
@@ -1444,15 +1442,39 @@ if not df.empty:
             }
             </style>
         """, unsafe_allow_html=True)
-        
+
         st.markdown("### 📅 Haftalık Çalışma Programı")
+
+        # 15'er dakikalık saat listesi (06:00 - 23:45)
+        saat_secenekleri = [f"{saat:02d}:{dakika:02d}" for saat in range(6, 24) for dakika in (0, 15, 30, 45)]
+        gun_tanimi = [
+            ("pazartesi", "📌 Pazartesi", "pazartesi", "📌"),
+            ("sali", "📌 Salı", "sali", "📌"),
+            ("carsamba", "📌 Çarşamba", "carsamba", "📌"),
+            ("persembe", "📌 Perşembe", "persembe", "📌"),
+            ("cuma", "📌 Cuma", "cuma", "📌"),
+            ("cumartesi", "🔥 Cumartesi", "cumartesi", "🔥"),
+            ("pazar", "🍀 Pazar", "pazar", "🍀"),
+        ]
+        hafiza_keys = [g[0] for g in gun_tanimi] + ["not"]
+
+        def blok_satirlarini_ayir(metin):
+            if not metin:
+                return []
+            satirlar = []
+            for ham in str(metin).split("\n"):
+                temiz = ham.strip()
+                if not temiz:
+                    continue
+                if temiz.startswith("[X] ") or temiz.startswith("[ ] "):
+                    temiz = temiz[4:].strip()
+                if temiz:
+                    satirlar.append(temiz)
+            return satirlar
 
         # --- 1. YENİ PROGRAM HAZIRLAMA (SADECE ADMİN GÖRÜR) ---
         if st.session_state['rol'] == "ADMIN":
             with st.expander("➕ Yeni Program Hazırla", expanded=False):
-                
-                # GEÇEN HAFTAYI KOPYALAMA İÇİN GEÇİCİ HAFIZA OLUŞTURMA
-                hafiza_keys = ['pzt', 'sal', 'car', 'per', 'cum', 'cmt', 'paz', 'not']
                 for k in hafiza_keys:
                     key_name = f"draft_{k}_{secili_id}"
                     if key_name not in st.session_state:
@@ -1460,86 +1482,157 @@ if not df.empty:
 
                 col_ipucu, col_buton = st.columns([2, 1], vertical_alignment="center")
                 with col_ipucu:
-                    st.info("💡 **İpucu:** Görevleri alt alta yazın (Örn: Mat 50 Soru).")
+                    st.info("💡 **İpucu:** İstediğin gün için saat aralığı seçip görev ekleyebilir veya alt alta serbest görev yazabilirsin.")
                 with col_buton:
                     if st.button("🔄 Geçen Haftayı Kopyala", use_container_width=True, type="secondary"):
                         res_last = supabase.table("calisma_programi").select("*").eq("ogrenci_id", secili_id).order("id", desc=True).limit(1).execute()
                         if res_last.data:
                             last = res_last.data[0]
-                            st.session_state[f"draft_pzt_{secili_id}"] = last.get('pazartesi', '')
-                            st.session_state[f"draft_sal_{secili_id}"] = last.get('sali', '')
-                            st.session_state[f"draft_car_{secili_id}"] = last.get('carsamba', '')
-                            st.session_state[f"draft_per_{secili_id}"] = last.get('persembe', '')
-                            st.session_state[f"draft_cum_{secili_id}"] = last.get('cuma', '')
-                            st.session_state[f"draft_cmt_{secili_id}"] = last.get('cumartesi', '')
-                            st.session_state[f"draft_paz_{secili_id}"] = last.get('pazar', '')
-                            st.session_state[f"draft_not_{secili_id}"] = last.get('haftalik_not', '')
+                            for g_key, _, _, _ in gun_tanimi:
+                                st.session_state[f"draft_{g_key}_{secili_id}"] = last.get(g_key, "") or ""
+                            st.session_state[f"draft_not_{secili_id}"] = last.get("haftalik_not", "") or ""
                             st.rerun()
                         else:
                             st.warning("Bu öğrenci için kopyalanacak geçmiş bir hafta bulunamadı.")
 
                 secili_hafta = st.text_input("Tarih Aralığı Girin:", value="28.09.2026 - 05.10.2026", key="h_input")
-                
-                with st.form("program_form", clear_on_submit=False): # clear_on_submit=False yapıyoruz ki kopyalama çalışsın
+
+                # Hızlı Saat Aralığı + Görev Bloğu Ekleme Aracı (15'er dk seçicili)
+                with st.container(border=True):
+                    st.markdown("##### ⏱️ Hızlı Saat Aralığı & Görev Bloğu Ekle")
+                    b_c1, b_c2, b_c3 = st.columns([1.4, 1, 1])
+                    with b_c1:
+                        blok_gun = st.selectbox(
+                            "Gün Seç:",
+                            options=[g[0] for g in gun_tanimi],
+                            format_func=lambda x: dict((g[0], g[1]) for g in gun_tanimi)[x],
+                            key=f"blok_gun_{secili_id}"
+                        )
+                    with b_c2:
+                        idx_bas = saat_secenekleri.index("17:00") if "17:00" in saat_secenekleri else 0
+                        bas_saat = st.selectbox("Başlangıç (15 dk):", saat_secenekleri, index=idx_bas, key=f"blok_bas_{secili_id}")
+                    with b_c3:
+                        idx_bit = saat_secenekleri.index("18:00") if "18:00" in saat_secenekleri else 0
+                        bit_saat = st.selectbox("Bitiş (15 dk):", saat_secenekleri, index=idx_bit, key=f"blok_bit_{secili_id}")
+
+                    b_d1, b_d2 = st.columns([1.3, 2.7])
+                    with b_d1:
+                        blok_tur = st.selectbox(
+                            "Çalışma Türü:",
+                            [
+                                "Türkçe Video", "Matematik Video", "Geometri Video", "Fizik Video",
+                                "Kimya Video", "Biyoloji Video", "Tarih Video", "Coğrafya Video",
+                                "Soru Çözümü", "Deneme Analizi", "Konu Tekrarı", "Mola"
+                            ],
+                            key=f"blok_tur_{secili_id}"
+                        )
+                    with b_d2:
+                        blok_detay = st.text_input(
+                            "İçerik / Video Sayısı & Süre Notu:",
+                            placeholder="Örn: Sözcükte Anlam - 2 Video (56.58 dk) veya 30 Soru",
+                            key=f"blok_detay_{secili_id}"
+                        )
+
+                    if st.button("➕ Saat Bloğunu İlgili Güne Ekle", use_container_width=True):
+                        if saat_secenekleri.index(bit_saat) <= saat_secenekleri.index(bas_saat):
+                            st.warning("Bitiş saati başlangıç saatinden sonra olmalıdır.")
+                        else:
+                            detay_kismi = f": {blok_detay.strip()}" if blok_detay.strip() else ""
+                            yeni_blok = f"{bas_saat} - {bit_saat} | {blok_tur}{detay_kismi}"
+                            hedef_key = f"draft_{blok_gun}_{secili_id}"
+                            mevcut_metin = st.session_state.get(hedef_key, "") or ""
+                            st.session_state[hedef_key] = f"{mevcut_metin}\n{yeni_blok}".strip() if mevcut_metin.strip() else yeni_blok
+                            st.rerun()
+
+                with st.form("program_form", clear_on_submit=False):
                     st.markdown("#### 🎯 Günlük Görev Dağılımı")
                     c_g1, c_g2 = st.columns(2)
+                    gun_degerleri = {}
+
+                    sol_gunler = ["pazartesi", "carsamba", "cuma", "pazar"]
+                    sag_gunler = ["sali", "persembe", "cumartesi"]
+                    baslik_haritasi = {g[0]: g[1] for g in gun_tanimi}
+
                     with c_g1:
-                        pazartesi = st.text_area("📌 Pazartesi", value=st.session_state[f"draft_pzt_{secili_id}"], height=110)
-                        carsamba = st.text_area("📌 Çarşamba", value=st.session_state[f"draft_car_{secili_id}"], height=110)
-                        cuma = st.text_area("📌 Cuma", value=st.session_state[f"draft_cum_{secili_id}"], height=110)
-                        pazar = st.text_area("🍀 Pazar", value=st.session_state[f"draft_paz_{secili_id}"], height=110)
+                        for g_k in sol_gunler:
+                            gun_degerleri[g_k] = st.text_area(
+                                baslik_haritasi[g_k],
+                                value=st.session_state[f"draft_{g_k}_{secili_id}"],
+                                height=115,
+                                key=f"ta_{g_k}_{secili_id}"
+                            )
                     with c_g2:
-                        sali = st.text_area("📌 Salı", value=st.session_state[f"draft_sal_{secili_id}"], height=110)
-                        persembe = st.text_area("📌 Perşembe", value=st.session_state[f"draft_per_{secili_id}"], height=110)
-                        cumartesi = st.text_area("🔥 Cumartesi", value=st.session_state[f"draft_cmt_{secili_id}"], height=110)
-                        haftalik_not = st.text_area("💡 Koçluk Notu", value=st.session_state[f"draft_not_{secili_id}"], height=110, placeholder="Öğrenciye özel motivasyon veya dikkat etmesi gerekenler...")
+                        for g_k in sag_gunler:
+                            gun_degerleri[g_k] = st.text_area(
+                                baslik_haritasi[g_k],
+                                value=st.session_state[f"draft_{g_k}_{secili_id}"],
+                                height=115,
+                                key=f"ta_{g_k}_{secili_id}"
+                            )
+                        haftalik_not = st.text_area(
+                            "💡 Koçluk Notu",
+                            value=st.session_state[f"draft_not_{secili_id}"],
+                            height=115,
+                            placeholder="Öğrenciye özel motivasyon veya dikkat etmesi gerekenler...",
+                            key=f"ta_not_{secili_id}"
+                        )
 
                     if st.form_submit_button("💾 Programı Kaydet", type="primary", use_container_width=True):
-                        program_kaydet(secili_id, secili_hafta, pazartesi, sali, carsamba, persembe, cuma, cumartesi, pazar, haftalik_not)
-                        
-                        # Kaydettikten sonra hafızayı temizle
+                        program_kaydet(
+                            secili_id,
+                            secili_hafta,
+                            gun_degerleri["pazartesi"],
+                            gun_degerleri["sali"],
+                            gun_degerleri["carsamba"],
+                            gun_degerleri["persembe"],
+                            gun_degerleri["cuma"],
+                            gun_degerleri["cumartesi"],
+                            gun_degerleri["pazar"],
+                            haftalik_not
+                        )
                         for k in hafiza_keys:
                             st.session_state[f"draft_{k}_{secili_id}"] = ""
-                            
                         st.success("Program başarıyla kaydedildi!")
                         st.rerun()
 
         # --- 2. SİSTEME KAYITLI PROGRAMLAR (HERKES GÖRÜR) ---
         st.markdown("---")
         st.markdown("### 🗂️ Güncel ve Geçmiş Haftalar")
-        
+
         res_haftalar = supabase.table("calisma_programi").select("*").eq("ogrenci_id", secili_id).order("id", desc=True).execute()
         df_haftalar = pd.DataFrame(res_haftalar.data) if res_haftalar.data else pd.DataFrame()
 
         if not df_haftalar.empty:
             for idx, row in df_haftalar.iterrows():
-                with st.expander(f"📂 {row['hafta_adi']} Programını İncele", expanded=(idx==0)):
-                    
-                    # --- TİKLENEBİLİR GÖREV LİSTESİ (ETKİLEŞİMLİ ALAN) ---
+                with st.expander(f"📂 {row['hafta_adi']} Programını İncele", expanded=(idx == 0)):
                     gunler_db = [
-                        ("Pazartesi", row.get('pazartesi', ''), "pazartesi", "📌"), ("Salı", row.get('sali', ''), "sali", "📌"), 
-                        ("Çarşamba", row.get('carsamba', ''), "carsamba", "📌"), ("Perşembe", row.get('persembe', ''), "persembe", "📌"), 
-                        ("Cuma", row.get('cuma', ''), "cuma", "📌"), ("Cumartesi", row.get('cumartesi', ''), "cumartesi", "🔥"), 
-                        ("Pazar", row.get('pazar', ''), "pazar", "🍀")
+                        ("Pazartesi", row.get('pazartesi', ''), "pazartesi", "📌"),
+                        ("Salı", row.get('sali', ''), "sali", "📌"),
+                        ("Çarşamba", row.get('carsamba', ''), "carsamba", "📌"),
+                        ("Perşembe", row.get('persembe', ''), "persembe", "📌"),
+                        ("Cuma", row.get('cuma', ''), "cuma", "📌"),
+                        ("Cumartesi", row.get('cumartesi', ''), "cumartesi", "🔥"),
+                        ("Pazar", row.get('pazar', ''), "pazar", "🍀"),
                     ]
-                    
+
                     guncel_veriler = {}
-                    
+
                     with st.form(key=f"gorev_form_{row['id']}"):
                         st.markdown("#### 🎯 Günlük Görevler")
                         cols = st.columns(3)
                         col_idx = 0
-                        
+
                         for g_isim, g_icerik, g_key, g_ikon in gunler_db:
                             if g_icerik:
                                 with cols[col_idx % 3]:
                                     st.markdown(f"**{g_ikon} {g_isim}**")
                                     satirlar = str(g_icerik).split('\n')
                                     yeni_satirlar = []
-                                    
+
                                     for i, satir in enumerate(satirlar):
-                                        if satir.strip() == "": continue
-                                        
+                                        if satir.strip() == "":
+                                            continue
+
                                         is_checked = False
                                         gorev_metni = satir
                                         if satir.startswith("[X] "):
@@ -1548,23 +1641,27 @@ if not df.empty:
                                         elif satir.startswith("[ ] "):
                                             is_checked = False
                                             gorev_metni = satir[4:]
-                                            
+
                                         check = st.checkbox(gorev_metni, value=is_checked, key=f"chk_{row['id']}_{g_key}_{i}")
                                         yeni_satirlar.append(f"[X] {gorev_metni}" if check else f"[ ] {gorev_metni}")
-                                    
+
                                     guncel_veriler[g_key] = "\n".join(yeni_satirlar)
-                                col_idx += 1
+                                    col_idx += 1
                             else:
                                 guncel_veriler[g_key] = ""
-                        
+
                         if row.get('haftalik_not'):
                             st.info(f"💡 **Emir Hocanın Notu:** {row['haftalik_not']}")
-                        
+
                         if st.form_submit_button("✅ İlerlemeyi Kaydet (Tikleri Güncelle)", use_container_width=True):
                             guncel_prog_data = {
-                                "pazartesi": guncel_veriler['pazartesi'], "sali": guncel_veriler['sali'], 
-                                "carsamba": guncel_veriler['carsamba'], "persembe": guncel_veriler['persembe'], 
-                                "cuma": guncel_veriler['cuma'], "cumartesi": guncel_veriler['cumartesi'], "pazar": guncel_veriler['pazar']
+                                "pazartesi": guncel_veriler['pazartesi'],
+                                "sali": guncel_veriler['sali'],
+                                "carsamba": guncel_veriler['carsamba'],
+                                "persembe": guncel_veriler['persembe'],
+                                "cuma": guncel_veriler['cuma'],
+                                "cumartesi": guncel_veriler['cumartesi'],
+                                "pazar": guncel_veriler['pazar'],
                             }
                             supabase.table("calisma_programi").update(guncel_prog_data).eq("id", row['id']).execute()
                             st.success("Görev ilerlemeleri başarıyla kaydedildi!")
@@ -1575,16 +1672,15 @@ if not df.empty:
                     # --- PROGRAMI GÜNCELLE VE SİL MENÜSÜ ---
                     if st.session_state['rol'] == "ADMIN":
                         with st.expander("✏️ Bu Programı Düzenle veya Sil", expanded=False):
-                            
                             st.markdown("##### Programı Düzenle")
                             with st.form(key=f"prog_duzenle_form_{row['id']}"):
                                 d_hafta = st.text_input("Tarih Aralığı (Hafta Adı):", value=row.get('hafta_adi', ''))
-                                
+
                                 col_p1, col_p2 = st.columns(2)
                                 with col_p1:
                                     def temiz_getir(metin):
                                         return str(metin).replace("[X] ", "").replace("[ ] ", "") if metin else ""
-                                        
+
                                     d_pazartesi = st.text_area("Pazartesi", value=temiz_getir(row.get('pazartesi')))
                                     d_carsamba = st.text_area("Çarşamba", value=temiz_getir(row.get('carsamba')))
                                     d_cuma = st.text_area("Cuma", value=temiz_getir(row.get('cuma')))
@@ -1594,18 +1690,23 @@ if not df.empty:
                                     d_persembe = st.text_area("Perşembe", value=temiz_getir(row.get('persembe')))
                                     d_cumartesi = st.text_area("Cumartesi", value=temiz_getir(row.get('cumartesi')))
                                     d_not = st.text_area("Koçluk Notu", value=row.get('haftalik_not', ''))
-                                    
+
                                 if st.form_submit_button("Değişiklikleri Kaydet", use_container_width=True):
                                     duzenli_prog_data = {
                                         "hafta_adi": d_hafta,
-                                        "pazartesi": d_pazartesi, "sali": d_sali, "carsamba": d_carsamba, 
-                                        "persembe": d_persembe, "cuma": d_cuma, "cumartesi": d_cumartesi, 
-                                        "pazar": d_pazar, "haftalik_not": d_not
+                                        "pazartesi": d_pazartesi,
+                                        "sali": d_sali,
+                                        "carsamba": d_carsamba,
+                                        "persembe": d_persembe,
+                                        "cuma": d_cuma,
+                                        "cumartesi": d_cumartesi,
+                                        "pazar": d_pazar,
+                                        "haftalik_not": d_not,
                                     }
                                     supabase.table("calisma_programi").update(duzenli_prog_data).eq("id", row['id']).execute()
                                     st.success("Program başarıyla güncellendi!")
                                     st.rerun()
-                            
+
                             st.markdown("---")
                             st.markdown("##### 🗑️ Programı Sil")
                             silme_onay = st.checkbox("Bu programı tamamen silmek istediğime eminim.", key=f"sil_onay_{row['id']}")
@@ -1619,26 +1720,37 @@ if not df.empty:
 
                     st.divider()
 
-                    # --- PDF VE WHATSAPP TASARIMI (NORMAL YAZI FONTU İLE GÜNCELLENDİ) ---
+                    # --- PDF VE WHATSAPP TASARIMI (YATAY A4 TEK SAYFA + OTOMATİK KÜÇÜLEN YAZI) ---
                     def wp_formatla(metin):
                         return str(metin).replace("[X] ", "✅ ").replace("[ ] ", "⬜ ") if metin else ""
-                    
+
                     def html_formatla(metin):
-                        if not metin: return '<div style="color:#94a3b8; font-style:italic; font-family:\'Segoe UI\', Tahoma, Geneva, Verdana, sans-serif; font-size:14px; margin-top:5px;">Serbest Gün...</div>'
+                        satir_listesi = blok_satirlarini_ayir(metin)
+                        if not satir_listesi:
+                            return '<div class="empty-day">Serbest Gün...</div>'
+
                         satirlar = str(metin).split('\n')
-                        html_liste = '<ul class="task-list">'
+                        # Yoğunluğa göre otomatik boyut sınıfı belirle
+                        toplam_karakter = sum(len(s) for s in satir_listesi)
+                        yogun_sinif = ""
+                        if len(satir_listesi) >= 5 or toplam_karakter > 190:
+                            yogun_sinif = " compact-high"
+                        elif len(satir_listesi) >= 3 or toplam_karakter > 110:
+                            yogun_sinif = " compact-mid"
+
+                        html_liste = f'<ul class="task-list{yogun_sinif}">'
                         for satir in satirlar:
-                            if satir.strip() == "": continue
-                            
-                            # Cümle başındaki sistem etiketlerini temizle
+                            if satir.strip() == "":
+                                continue
+
                             temiz_satir = satir
-                            if satir.startswith("[X] "): temiz_satir = satir[4:]
-                            elif satir.startswith("[ ] "): temiz_satir = satir[4:]
-                            
-                            # Sistemde tamamlandı ([X]) olarak işaretlenmişse PDF'te tikli görünsün
+                            if satir.startswith("[X] "):
+                                temiz_satir = satir[4:]
+                            elif satir.startswith("[ ] "):
+                                temiz_satir = satir[4:]
+
                             if satir.startswith("[X] "):
                                 html_liste += f'<li class="task done"><span class="check-box checked">✔</span><span class="task-text">{temiz_satir}</span></li>'
-                            # BAŞINA İŞARET KONMAMIŞ YA DA BOŞ OLAN HER GÖREV İÇİN BOŞ KARE KUTU KOY 
                             else:
                                 html_liste += f'<li class="task"><span class="check-box empty"></span><span class="task-text">{temiz_satir}</span></li>'
                         html_liste += '</ul>'
@@ -1646,47 +1758,214 @@ if not df.empty:
 
                     wp_text = f"📒 *HAFTALIK ÇALIŞMA PROGRAMI* 📒\n👤 *Öğrenci:* {secili_ogrenci['ad_soyad']}\n📅 *Tarih:* _{row['hafta_adi']}_\n➖➖➖➖➖➖\n"
                     for g_isim, g_icerik, g_key, g_ikon in gunler_db:
-                        if g_icerik: wp_text += f"{g_ikon} *{g_isim[:3].upper()}:*\n{wp_formatla(g_icerik)}\n\n"
-                    if row.get('haftalik_not'): wp_text += f"💡 *NOT:* _{row['haftalik_not']}_"
-                    
+                        if g_icerik:
+                            wp_text += f"{g_ikon} *{g_isim[:3].upper()}:*\n{wp_formatla(g_icerik)}\n\n"
+                    if row.get('haftalik_not'):
+                        wp_text += f"💡 *NOT:* _{row['haftalik_not']}_"
+
                     tel_clean = str(secili_ogrenci['telefon']).replace(" ", "")
-                    if tel_clean.startswith("0"): tel_clean = "90" + tel_clean[1:]
+                    if tel_clean.startswith("0"):
+                        tel_clean = "90" + tel_clean[1:]
                     wp_url = f"https://wa.me/{tel_clean}?text={urllib.parse.quote(wp_text)}"
-                    
-                    # ESNEYEBİLEN VE YAZILARI KESMEYEN KUSURSUZ 4x2 PDF IZGARASI (EL YAZISI FONTU KALDIRILDI)
+
+                    not_icerik = row.get("haftalik_not") if row.get("haftalik_not") else "Öğrencimize iyi çalışmalar dilerim..."
+                    not_compact = " not-compact" if len(str(not_icerik)) > 160 else ""
+
                     html_icerik = f"""
                     <!DOCTYPE html>
                     <html lang="tr">
                     <head>
                         <meta charset="UTF-8">
                         <title>{secili_ogrenci['ad_soyad']} - {row['hafta_adi']}</title>
-                        <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;800;900&display=swap" rel="stylesheet">
+                        <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
                         <style>
                             * {{ box-sizing: border-box; }}
-                            body {{ background-color: #fcfbf8; font-family: 'Nunito', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; color: #1e293b; }}
-                            .container {{ width: 100%; max-width: 1200px; margin: auto; background-color: #fff; padding: 20px; border-radius: 12px; border: 2px solid #d4af37; box-shadow: 0 5px 15px rgba(212, 175, 55, 0.1); display: flex; flex-direction: column; }}
-                            .header {{ text-align: center; border-bottom: 2px solid #d4af37; padding-bottom: 10px; margin-bottom: 15px; }}
-                            .header h1 {{ margin: 0; color: #b8860b; font-size: 24px; font-weight: 900; letter-spacing: 1px; }}
-                            .header p {{ margin: 3px 0 0 0; font-size: 15px; font-weight: 800; color: #475569; }}
-                            .grid-container {{ display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: auto auto; gap: 10px; align-items: stretch; }}
-                            .gun-kutu {{ border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 12px; background-color: #f8fafc; display: flex; flex-direction: column; }}
-                            .gun-baslik {{ font-size: 15px; font-weight: 900; color: #b8860b; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }}
-                            .task-list {{ list-style: none; padding: 0; margin: 0; flex: 1; }}
-                            .task {{ display: flex; align-items: flex-start; margin-bottom: 6px; font-size: 14px; font-weight: 600; color: #334155; line-height: 1.4; }}
-                            .task.done {{ text-decoration: line-through; color: #94a3b8; }}
-                            .check-box {{ display: inline-block; width: 14px; height: 14px; border: 1.5px solid #d4af37; border-radius: 3px; text-align: center; line-height: 14px; font-size: 10px; margin-right: 6px; margin-top: 2px; flex-shrink: 0; font-family: sans-serif; }}
-                            .check-box.checked {{ background-color: #d4af37; color: #fff; font-weight: bold; border-color: #d4af37; }}
-                            .check-box.empty {{ background-color: #fff; }}
-                            .task-text {{ flex: 1; word-wrap: break-word; word-break: break-word; hyphens: auto; }}
-                            .not-kutu {{ border: 2px solid #b8860b; border-radius: 8px; padding: 12px; background-color: #fffbeb; display: flex; flex-direction: column; }}
-                            .not-metin {{ font-size: 15px; font-weight: 600; color: #92400e; white-space: pre-wrap; flex: 1; word-wrap: break-word; }}
-                            
-                            @page {{ size: A4 landscape; margin: 0 !important; }}
-                            @media print {{ 
-                                html, body {{ width: 297mm !important; height: auto !important; min-height: 209mm !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; background-color: #fff !important; }}
-                                .container {{ width: 100% !important; height: auto !important; min-height: 100% !important; border: none !important; box-shadow: none !important; padding: 8mm 10mm !important; margin: 0 !important; overflow: visible !important; }}
-                                .grid-container {{ height: auto !important; overflow: visible !important; }}
-                                .gun-kutu, .not-kutu {{ height: auto !important; min-height: 80mm !important; page-break-inside: avoid; }}
+                            html, body {{
+                                margin: 0;
+                                padding: 0;
+                                background-color: #ffffff;
+                                font-family: 'Nunito', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                                color: #1e293b;
+                            }}
+                            .container {{
+                                width: 100%;
+                                max-width: 100%;
+                                background-color: #ffffff;
+                                padding: 8px 12px;
+                                display: flex;
+                                flex-direction: column;
+                            }}
+                            .header {{
+                                text-align: center;
+                                border-bottom: 2px solid #d4af37;
+                                padding-bottom: 6px;
+                                margin-bottom: 8px;
+                            }}
+                            .header h1 {{
+                                margin: 0;
+                                color: #b8860b;
+                                font-size: clamp(16px, 1.8vw, 21px);
+                                font-weight: 900;
+                                letter-spacing: 0.5px;
+                            }}
+                            .header p {{
+                                margin: 2px 0 0 0;
+                                font-size: clamp(11px, 1.1vw, 13px);
+                                font-weight: 800;
+                                color: #475569;
+                            }}
+                            .grid-container {{
+                                display: grid;
+                                grid-template-columns: repeat(4, minmax(0, 1fr));
+                                grid-template-rows: repeat(2, minmax(0, 1fr));
+                                gap: 8px;
+                                width: 100%;
+                            }}
+                            .gun-kutu {{
+                                border: 1.5px solid #cbd5e1;
+                                border-radius: 7px;
+                                padding: 7px 8px;
+                                background-color: #f8fafc;
+                                display: flex;
+                                flex-direction: column;
+                                min-width: 0;
+                                overflow: hidden;
+                            }}
+                            .gun-baslik {{
+                                font-size: clamp(11.5px, 1.15vw, 13.5px);
+                                font-weight: 900;
+                                color: #b8860b;
+                                margin-bottom: 5px;
+                                border-bottom: 1px solid #e2e8f0;
+                                padding-bottom: 3px;
+                                white-space: nowrap;
+                                overflow: hidden;
+                                text-overflow: ellipsis;
+                            }}
+                            .empty-day {{
+                                color: #94a3b8;
+                                font-style: italic;
+                                font-size: clamp(10.5px, 1vw, 12px);
+                                margin-top: 4px;
+                            }}
+                            .task-list {{
+                                list-style: none;
+                                padding: 0;
+                                margin: 0;
+                                flex: 1;
+                                overflow-wrap: break-word;
+                                word-wrap: break-word;
+                            }}
+                            .task {{
+                                display: flex;
+                                align-items: flex-start;
+                                margin-bottom: 4px;
+                                font-size: clamp(10.5px, 1vw, 12.2px);
+                                font-weight: 600;
+                                color: #1e293b;
+                                line-height: 1.28;
+                                overflow-wrap: break-word;
+                                word-break: break-word;
+                            }}
+                            .task-list.compact-mid .task {{
+                                font-size: clamp(9.5px, 0.9vw, 11px);
+                                line-height: 1.22;
+                                margin-bottom: 3px;
+                            }}
+                            .task-list.compact-high .task {{
+                                font-size: clamp(8.5px, 0.82vw, 10px);
+                                line-height: 1.18;
+                                margin-bottom: 2px;
+                            }}
+                            .task.done {{
+                                text-decoration: line-through;
+                                color: #94a3b8;
+                            }}
+                            .check-box {{
+                                display: inline-block;
+                                width: 12px;
+                                height: 12px;
+                                border: 1.4px solid #b8860b;
+                                border-radius: 2px;
+                                text-align: center;
+                                line-height: 11px;
+                                font-size: 9px;
+                                margin-right: 5px;
+                                margin-top: 1px;
+                                flex-shrink: 0;
+                                font-family: sans-serif;
+                            }}
+                            .check-box.checked {{
+                                background-color: #d4af37;
+                                color: #ffffff;
+                                font-weight: bold;
+                                border-color: #d4af37;
+                            }}
+                            .check-box.empty {{
+                                background-color: #ffffff;
+                            }}
+                            .task-text {{
+                                flex: 1;
+                                min-width: 0;
+                                overflow-wrap: break-word;
+                                word-break: break-word;
+                            }}
+                            .not-kutu {{
+                                border: 1.5px solid #b8860b;
+                                border-radius: 7px;
+                                padding: 7px 8px;
+                                background-color: #fffbeb;
+                                display: flex;
+                                flex-direction: column;
+                                min-width: 0;
+                                overflow: hidden;
+                            }}
+                            .not-metin {{
+                                font-size: clamp(10.5px, 1vw, 12px);
+                                font-weight: 600;
+                                color: #92400e;
+                                white-space: pre-wrap;
+                                line-height: 1.28;
+                                overflow-wrap: break-word;
+                                word-break: break-word;
+                            }}
+                            .not-metin.not-compact {{
+                                font-size: clamp(9px, 0.85vw, 10.5px);
+                                line-height: 1.2;
+                            }}
+
+                            @page {{
+                                size: A4 landscape;
+                                margin: 6mm;
+                            }}
+                            @media print {{
+                                html, body {{
+                                    width: 285mm;
+                                    height: 197mm;
+                                    margin: 0 !important;
+                                    padding: 0 !important;
+                                    overflow: hidden !important;
+                                    -webkit-print-color-adjust: exact !important;
+                                    print-color-adjust: exact !important;
+                                    background-color: #ffffff !important;
+                                }}
+                                .container {{
+                                    width: 100% !important;
+                                    height: 100% !important;
+                                    padding: 0 !important;
+                                    justify-content: space-between;
+                                }}
+                                .grid-container {{
+                                    flex: 1;
+                                    height: 100%;
+                                    gap: 6px;
+                                }}
+                                .gun-kutu, .not-kutu {{
+                                    height: 100%;
+                                    padding: 6px 7px;
+                                    page-break-inside: avoid;
+                                    break-inside: avoid;
+                                }}
                             }}
                         </style>
                     </head>
@@ -1698,22 +1977,23 @@ if not df.empty:
                             </div>
                             <div class="grid-container">
                     """
-                    
+
                     gunler_html = [
-                        ("Pazartesi", html_formatla(row.get('pazartesi', ''))), ("Salı", html_formatla(row.get('sali', ''))), 
-                        ("Çarşamba", html_formatla(row.get('carsamba', ''))), ("Perşembe", html_formatla(row.get('persembe', ''))), 
-                        ("Cuma", html_formatla(row.get('cuma', ''))), ("Cumartesi", html_formatla(row.get('cumartesi', ''))), 
-                        ("Pazar", html_formatla(row.get('pazar', '')))
+                        ("Pazartesi", html_formatla(row.get('pazartesi', ''))),
+                        ("Salı", html_formatla(row.get('sali', ''))),
+                        ("Çarşamba", html_formatla(row.get('carsamba', ''))),
+                        ("Perşembe", html_formatla(row.get('persembe', ''))),
+                        ("Cuma", html_formatla(row.get('cuma', ''))),
+                        ("Cumartesi", html_formatla(row.get('cumartesi', ''))),
+                        ("Pazar", html_formatla(row.get('pazar', ''))),
                     ]
-                    
+
                     for g_isim, g_icerik in gunler_html:
                         html_icerik += f'<div class="gun-kutu"><div class="gun-baslik">{g_isim}</div>{g_icerik}</div>'
-                            
-                    not_icerik = row.get("haftalik_not") if row.get("haftalik_not") else "Öğrencimize iyi çalışmalar dilerim..."
-                    html_icerik += f'<div class="not-kutu"><div class="gun-baslik">💡 Emir Hocanın Notu</div><div class="not-metin">{not_icerik}</div></div>'
-                        
+
+                    html_icerik += f'<div class="not-kutu"><div class="gun-baslik">💡 Emir Hocanın Notu</div><div class="not-metin{not_compact}">{not_icerik}</div></div>'
                     html_icerik += '</div></div></body></html>'
-                    
+
                     if st.session_state['rol'] == "ADMIN":
                         col_btn1, col_btn2 = st.columns(2)
                         col_btn1.link_button("📲 WhatsApp'tan Gönder", wp_url, use_container_width=True)
