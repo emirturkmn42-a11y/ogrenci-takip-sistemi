@@ -1737,27 +1737,49 @@ if not df.empty:
         # --- 1. YENİ PROGRAM HAZIRLAMA (SADECE ADMİN GÖRÜR) ---
         if st.session_state['rol'] == "ADMIN":
             with st.expander("➕ Yeni Program Hazırla", expanded=False):
+                versiyon_key = f"ta_ver_{secili_id}"
+                if versiyon_key not in st.session_state:
+                    st.session_state[versiyon_key] = 0
+
+                aktif_ver = st.session_state[versiyon_key]
+
                 for k in hafiza_keys:
-                    ta_key = f"ta_{k}_{secili_id}"
-                    if ta_key not in st.session_state:
-                        st.session_state[ta_key] = ""
+                    depo_key = f"depo_{k}_{secili_id}"
+                    widget_key = f"ta_{k}_{secili_id}_v{aktif_ver}"
+                    if depo_key not in st.session_state:
+                        st.session_state[depo_key] = ""
+                    if widget_key not in st.session_state:
+                        st.session_state[widget_key] = st.session_state[depo_key]
 
                 uyari_key = f"blok_uyari_{secili_id}"
                 if uyari_key not in st.session_state:
                     st.session_state[uyari_key] = ""
+
+                def mevcut_kutulari_depoya_al(ogr_id, ver_no):
+                    for k in hafiza_keys:
+                        w_key = f"ta_{k}_{ogr_id}_v{ver_no}"
+                        if w_key in st.session_state:
+                            st.session_state[f"depo_{k}_{ogr_id}"] = st.session_state[w_key]
 
                 def gecen_haftayi_kopyala_cb(ogr_id):
                     res_last = supabase.table("calisma_programi").select("*").eq("ogrenci_id", ogr_id).order("id", desc=True).limit(1).execute()
                     if res_last.data:
                         last = res_last.data[0]
                         for g_key, _, _, _ in gun_tanimi:
-                            st.session_state[f"ta_{g_key}_{ogr_id}"] = last.get(g_key, "") or ""
-                        st.session_state[f"ta_not_{ogr_id}"] = last.get("haftalik_not", "") or ""
+                            st.session_state[f"depo_{g_key}_{ogr_id}"] = last.get(g_key, "") or ""
+                        st.session_state[f"depo_not_{ogr_id}"] = last.get("haftalik_not", "") or ""
                         st.session_state[f"blok_uyari_{ogr_id}"] = ""
+                        v_key = f"ta_ver_{ogr_id}"
+                        st.session_state[v_key] = st.session_state.get(v_key, 0) + 1
                     else:
                         st.session_state[f"blok_uyari_{ogr_id}"] = "Bu öğrenci için kopyalanacak geçmiş bir hafta bulunamadı."
 
                 def saat_blogu_ekle_cb(ogr_id):
+                    v_key = f"ta_ver_{ogr_id}"
+                    cur_ver = st.session_state.get(v_key, 0)
+                    # Butona basıldığı anda kutulardaki son (silinmiş/düzenlenmiş) halleri depoya çek
+                    mevcut_kutulari_depoya_al(ogr_id, cur_ver)
+
                     sec_gun = st.session_state.get(f"blok_gun_{ogr_id}", "pazartesi")
                     b_saat = st.session_state.get(f"blok_bas_{ogr_id}", "17:00")
                     e_saat = st.session_state.get(f"blok_bit_{ogr_id}", "17:45")
@@ -1771,14 +1793,22 @@ if not df.empty:
                     st.session_state[f"blok_uyari_{ogr_id}"] = ""
                     detay_kismi = f": {b_detay}" if b_detay else ""
                     yeni_blok = f"{b_saat} - {e_saat} | {b_tur}{detay_kismi}"
-                    hedef_ta_key = f"ta_{sec_gun}_{ogr_id}"
-                    mevcut_metin = st.session_state.get(hedef_ta_key, "") or ""
-                    st.session_state[hedef_ta_key] = f"{mevcut_metin}\n{yeni_blok}".strip() if mevcut_metin.strip() else yeni_blok
+                    hedef_depo_key = f"depo_{sec_gun}_{ogr_id}"
+                    mevcut_metin = st.session_state.get(hedef_depo_key, "") or ""
+                    st.session_state[hedef_depo_key] = f"{mevcut_metin}\n{yeni_blok}".strip() if mevcut_metin.strip() else yeni_blok
                     st.session_state[f"blok_detay_{ogr_id}"] = ""
+                    st.session_state[v_key] = cur_ver + 1
+
+                def gun_temizle_cb(ogr_id, gun_k):
+                    v_key = f"ta_ver_{ogr_id}"
+                    cur_ver = st.session_state.get(v_key, 0)
+                    mevcut_kutulari_depoya_al(ogr_id, cur_ver)
+                    st.session_state[f"depo_{gun_k}_{ogr_id}"] = ""
+                    st.session_state[v_key] = cur_ver + 1
 
                 col_ipucu, col_buton = st.columns([2, 1], vertical_alignment="center")
                 with col_ipucu:
-                    st.info("💡 **İpucu:** Saat bloğunu eklediğinde seçtiğin gün kutusuna düşer; alttaki kutularda istediğin gibi elle düzenleme veya silme yapabilirsin.")
+                    st.info("💡 **İpucu:** Kutulardan satır silip yeni saat bloğu eklediğinde sildiklerin geri gelmez; istersen gün başlığındaki Temizle butonuyla tek tıkla sıfırlayabilirsin.")
                 with col_buton:
                     st.button(
                         "🔄 Geçen Haftayı Kopyala",
@@ -1841,6 +1871,19 @@ if not df.empty:
                         args=(secili_id,)
                     )
 
+                # Gün kutularını hızla boşaltmak için küçük temizleme çubuğu
+                with st.expander("🧹 Gün Kutusunu Hızlı Temizle", expanded=False):
+                    t_cols = st.columns(7)
+                    for i_g, (g_k, _, g_ad, g_ik) in enumerate(gun_tanimi):
+                        with t_cols[i_g]:
+                            st.button(
+                                f"{g_ik} {g_ad[:3].title()}",
+                                use_container_width=True,
+                                key=f"btn_temiz_{g_k}_{secili_id}",
+                                on_click=gun_temizle_cb,
+                                args=(secili_id, g_k)
+                            )
+
                 with st.form("program_form", clear_on_submit=False):
                     st.markdown("#### 🎯 Günlük Görev Dağılımı")
                     st.caption("Kutuların içine doğrudan tıklayıp istediğin satırı silebilir, değiştirebilir veya kendi notunu ekleyebilirsin.")
@@ -1856,20 +1899,20 @@ if not df.empty:
                             gun_degerleri[g_k] = st.text_area(
                                 baslik_haritasi[g_k],
                                 height=120,
-                                key=f"ta_{g_k}_{secili_id}"
+                                key=f"ta_{g_k}_{secili_id}_v{aktif_ver}"
                             )
                     with c_g2:
                         for g_k in sag_gunler:
                             gun_degerleri[g_k] = st.text_area(
                                 baslik_haritasi[g_k],
                                 height=120,
-                                key=f"ta_{g_k}_{secili_id}"
+                                key=f"ta_{g_k}_{secili_id}_v{aktif_ver}"
                             )
                         haftalik_not = st.text_area(
                             "💡 Koçluk Notu",
                             height=120,
                             placeholder="Öğrenciye özel motivasyon veya dikkat etmesi gerekenler...",
-                            key=f"ta_not_{secili_id}"
+                            key=f"ta_not_{secili_id}_v{aktif_ver}"
                         )
 
                     if st.form_submit_button("💾 Programı Kaydet", type="primary", use_container_width=True):
@@ -1886,7 +1929,8 @@ if not df.empty:
                             haftalik_not
                         )
                         for k in hafiza_keys:
-                            st.session_state[f"ta_{k}_{secili_id}"] = ""
+                            st.session_state[f"depo_{k}_{secili_id}"] = ""
+                        st.session_state[versiyon_key] = aktif_ver + 1
                         st.session_state[uyari_key] = ""
                         st.success("Program başarıyla kaydedildi!")
                         st.rerun()
@@ -1895,15 +1939,15 @@ if not df.empty:
                 st.markdown("#### 🖥️ Canlı PDF / Yatay A4 Görünüm Önizlemesi")
                 st.caption("Yazıların kutulara sığışını ve boyut küçülmesini kaydetmeden önce buradan kontrol edebilirsin.")
                 canli_gunler_html = [
-                    ("Pazartesi", st.session_state.get(f"ta_pazartesi_{secili_id}", "")),
-                    ("Salı", st.session_state.get(f"ta_sali_{secili_id}", "")),
-                    ("Çarşamba", st.session_state.get(f"ta_carsamba_{secili_id}", "")),
-                    ("Perşembe", st.session_state.get(f"ta_persembe_{secili_id}", "")),
-                    ("Cuma", st.session_state.get(f"ta_cuma_{secili_id}", "")),
-                    ("Cumartesi", st.session_state.get(f"ta_cumartesi_{secili_id}", "")),
-                    ("Pazar", st.session_state.get(f"ta_pazar_{secili_id}", "")),
+                    ("Pazartesi", st.session_state.get(f"ta_pazartesi_{secili_id}_v{aktif_ver}", st.session_state.get(f"depo_pazartesi_{secili_id}", ""))),
+                    ("Salı", st.session_state.get(f"ta_sali_{secili_id}_v{aktif_ver}", st.session_state.get(f"depo_sali_{secili_id}", ""))),
+                    ("Çarşamba", st.session_state.get(f"ta_carsamba_{secili_id}_v{aktif_ver}", st.session_state.get(f"depo_carsamba_{secili_id}", ""))),
+                    ("Perşembe", st.session_state.get(f"ta_persembe_{secili_id}_v{aktif_ver}", st.session_state.get(f"depo_persembe_{secili_id}", ""))),
+                    ("Cuma", st.session_state.get(f"ta_cuma_{secili_id}_v{aktif_ver}", st.session_state.get(f"depo_cuma_{secili_id}", ""))),
+                    ("Cumartesi", st.session_state.get(f"ta_cumartesi_{secili_id}_v{aktif_ver}", st.session_state.get(f"depo_cumartesi_{secili_id}", ""))),
+                    ("Pazar", st.session_state.get(f"ta_pazar_{secili_id}_v{aktif_ver}", st.session_state.get(f"depo_pazar_{secili_id}", ""))),
                 ]
-                canli_not_html = st.session_state.get(f"ta_not_{secili_id}", "")
+                canli_not_html = st.session_state.get(f"ta_not_{secili_id}_v{aktif_ver}", st.session_state.get(f"depo_not_{secili_id}", ""))
                 onizleme_html = pdf_html_olustur(
                     secili_ogrenci['ad_soyad'],
                     secili_hafta,
