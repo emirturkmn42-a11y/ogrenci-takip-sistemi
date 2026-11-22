@@ -1520,7 +1520,7 @@ if not df.empty:
                         blok_tur = st.selectbox(
                             "Çalışma Türü:",
                             [
-                                "Türkçe", "Matematik", "Geometri", "Fizik",
+                                "Türkçe", "Matematik", "İngilizce", "Geometri", "Fizik",
                                 "Kimya", "Biyoloji", "Tarih", "Coğrafya",
                                 "Soru Çözümü", "Deneme Analizi", "Konu Tekrarı", "Mola"
                             ],
