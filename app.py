@@ -1755,6 +1755,10 @@ if not df.empty:
                 if uyari_key not in st.session_state:
                     st.session_state[uyari_key] = ""
 
+                durum_mesaj_key = f"manuel_durum_{secili_id}"
+                if durum_mesaj_key not in st.session_state:
+                    st.session_state[durum_mesaj_key] = ""
+
                 def mevcut_kutulari_depoya_al(ogr_id, ver_no):
                     for k in hafiza_keys:
                         w_key = f"ta_{k}_{ogr_id}_v{ver_no}"
@@ -1769,6 +1773,7 @@ if not df.empty:
                             st.session_state[f"depo_{g_key}_{ogr_id}"] = last.get(g_key, "") or ""
                         st.session_state[f"depo_not_{ogr_id}"] = last.get("haftalik_not", "") or ""
                         st.session_state[f"blok_uyari_{ogr_id}"] = ""
+                        st.session_state[f"manuel_durum_{ogr_id}"] = "Geçen haftanın programı yüklendi."
                         v_key = f"ta_ver_{ogr_id}"
                         st.session_state[v_key] = st.session_state.get(v_key, 0) + 1
                     else:
@@ -1777,7 +1782,6 @@ if not df.empty:
                 def saat_blogu_ekle_cb(ogr_id):
                     v_key = f"ta_ver_{ogr_id}"
                     cur_ver = st.session_state.get(v_key, 0)
-                    # Butona basıldığı anda kutulardaki son (silinmiş/düzenlenmiş) halleri depoya çek
                     mevcut_kutulari_depoya_al(ogr_id, cur_ver)
 
                     sec_gun = st.session_state.get(f"blok_gun_{ogr_id}", "pazartesi")
@@ -1791,6 +1795,7 @@ if not df.empty:
                         return
 
                     st.session_state[f"blok_uyari_{ogr_id}"] = ""
+                    st.session_state[f"manuel_durum_{ogr_id}"] = ""
                     detay_kismi = f": {b_detay}" if b_detay else ""
                     yeni_blok = f"{b_saat} - {e_saat} | {b_tur}{detay_kismi}"
                     hedef_depo_key = f"depo_{sec_gun}_{ogr_id}"
@@ -1799,16 +1804,17 @@ if not df.empty:
                     st.session_state[f"blok_detay_{ogr_id}"] = ""
                     st.session_state[v_key] = cur_ver + 1
 
-                def gun_temizle_cb(ogr_id, gun_k):
+                def manuel_duzenleme_guncelle_cb(ogr_id):
                     v_key = f"ta_ver_{ogr_id}"
                     cur_ver = st.session_state.get(v_key, 0)
                     mevcut_kutulari_depoya_al(ogr_id, cur_ver)
-                    st.session_state[f"depo_{gun_k}_{ogr_id}"] = ""
+                    st.session_state[f"blok_uyari_{ogr_id}"] = ""
+                    st.session_state[f"manuel_durum_{ogr_id}"] = "Manuel düzenlemelerin güncellendi; yeni blok eklersen sildiklerin geri gelmez."
                     st.session_state[v_key] = cur_ver + 1
 
                 col_ipucu, col_buton = st.columns([2, 1], vertical_alignment="center")
                 with col_ipucu:
-                    st.info("💡 **İpucu:** Kutulardan satır silip yeni saat bloğu eklediğinde sildiklerin geri gelmez; istersen gün başlığındaki Temizle butonuyla tek tıkla sıfırlayabilirsin.")
+                    st.info("💡 **İpucu:** Aşağıdaki gün kutularından elle satır silip 'Manuel Düzenlemeyi Güncelle' butonuna basarsan değişikliklerin sabitlenir.")
                 with col_buton:
                     st.button(
                         "🔄 Geçen Haftayı Kopyala",
@@ -1871,22 +1877,13 @@ if not df.empty:
                         args=(secili_id,)
                     )
 
-                # Gün kutularını hızla boşaltmak için küçük temizleme çubuğu
-                with st.expander("🧹 Gün Kutusunu Hızlı Temizle", expanded=False):
-                    t_cols = st.columns(7)
-                    for i_g, (g_k, _, g_ad, g_ik) in enumerate(gun_tanimi):
-                        with t_cols[i_g]:
-                            st.button(
-                                f"{g_ik} {g_ad[:3].title()}",
-                                use_container_width=True,
-                                key=f"btn_temiz_{g_k}_{secili_id}",
-                                on_click=gun_temizle_cb,
-                                args=(secili_id, g_k)
-                            )
+                st.markdown("#### 🎯 Günlük Görev Dağılımı")
+                st.caption("Kutuların içinden elle satır silebilir veya değiştirebilirsin. Sonrasında alttaki 'Manuel Düzenlemeyi Güncelle' butonuyla sabitleyebilir ya da doğrudan programı kaydedebilirsin.")
+
+                if st.session_state.get(durum_mesaj_key):
+                    st.success(st.session_state[durum_mesaj_key])
 
                 with st.form("program_form", clear_on_submit=False):
-                    st.markdown("#### 🎯 Günlük Görev Dağılımı")
-                    st.caption("Kutuların içine doğrudan tıklayıp istediğin satırı silebilir, değiştirebilir veya kendi notunu ekleyebilirsin.")
                     c_g1, c_g2 = st.columns(2)
                     gun_degerleri = {}
 
@@ -1915,7 +1912,22 @@ if not df.empty:
                             key=f"ta_not_{secili_id}_v{aktif_ver}"
                         )
 
-                    if st.form_submit_button("💾 Programı Kaydet", type="primary", use_container_width=True):
+                    f_col1, f_col2 = st.columns(2)
+                    with f_col1:
+                        st.form_submit_button(
+                            "✏️ Manuel Düzenlemeyi Güncelle",
+                            use_container_width=True,
+                            on_click=manuel_duzenleme_guncelle_cb,
+                            args=(secili_id,)
+                        )
+                    with f_col2:
+                        kaydet_basildi = st.form_submit_button(
+                            "💾 Programı Kaydet",
+                            type="primary",
+                            use_container_width=True
+                        )
+
+                    if kaydet_basildi:
                         program_kaydet(
                             secili_id,
                             secili_hafta,
@@ -1932,6 +1944,7 @@ if not df.empty:
                             st.session_state[f"depo_{k}_{secili_id}"] = ""
                         st.session_state[versiyon_key] = aktif_ver + 1
                         st.session_state[uyari_key] = ""
+                        st.session_state[durum_mesaj_key] = ""
                         st.success("Program başarıyla kaydedildi!")
                         st.rerun()
 
