@@ -1217,22 +1217,22 @@ if not df.empty:
     # KODUN KALBİ: Mevcut öğrencilerin eski verilerini silmeden, yeni eklenen dersleri otomatik atar.
     konulari_ata(secili_id, secili_ogrenci['sinav_turu'])
     
-    # 2. SEKMELERİN KİLİTLENMESİ
-if st.session_state['rol'] == "ADMIN":
-    sekme_listesi = [
-        "📷 Profil", "📚 Kaynak Yönetimi", "📅 Çalışma Programı", "📝 Ödev Takibi", "🧠 Yanlış Havuzu & AI",
-        "📊 Deneme Puanı", "📖 Ders Konuları", "📈 Haftalık Analiz", "👨‍👩‍👧 Veli Bilgilendirme",
-        "🗓️ Ajanda", "✏️ Güncelle", "🗑️ Sil"
-    ]
-else:
-    # Öğrenci girdiğinde son 2 sekme (Güncelle ve Sil) kilitli görünür
-    sekme_listesi = [
-        "📷 Profil", "📚 Kaynak Yönetimi", "📅 Çalışma Programı", "📝 Ödev Takibi", "🧠 Yanlış Havuzu & AI",
-        "📊 Deneme Puanı", "📖 Ders Konuları", "📈 Haftalık Analiz", "👨‍👩‍👧 Veli Bilgilendirme",
-        "🗓️ Ajanda", "✏️ Güncelle", "🗑️ Sil"
-    ]
-
-tab1, tab2, tab3, tab4, tab_ai, tab5, tab6, tab7, tab8, tab_ajanda, tab9, tab10 = st.tabs(sekme_listesi)
+        # 2. SEKMELERİN KİLİTLENMESİ
+    if st.session_state['rol'] == "ADMIN":
+        sekme_listesi = [
+            "📷 Profil", "📚 Kaynak Yönetimi", "📅 Çalışma Programı", "📝 Ödev Takibi", "🧠 Yanlış Havuzu & AI",
+            "📊 Deneme Puanı", "📖 Ders Konuları", "📈 Haftalık Analiz", "👨‍👩‍👧 Veli Bilgilendirme",
+            "🗓️ Ajanda", "✏️ Güncelle", "🗑️ Sil"
+        ]
+    else:
+        # Öğrenci girdiğinde son 2 sekme (Güncelle ve Sil) kilitli görünür
+        sekme_listesi = [
+            "📷 Profil", "📚 Kaynak Yönetimi", "📅 Çalışma Programı", "📝 Ödev Takibi", "🧠 Yanlış Havuzu & AI",
+            "📊 Deneme Puanı", "📖 Ders Konuları", "📈 Haftalık Analiz", "👨‍👩‍👧 Veli Bilgilendirme",
+            "🗓️ Ajanda", "✏️ Güncelle", "🗑️ Sil"
+        ]
+    
+    tab1, tab2, tab3, tab4, tab_ai, tab5, tab6, tab7, tab8, tab_ajanda, tab9, tab10 = st.tabs(sekme_listesi)
     
     # --- 1. PROFİL ---
     with tab1:
