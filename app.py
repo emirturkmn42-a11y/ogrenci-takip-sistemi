@@ -2355,405 +2355,403 @@ if not df.empty:
 
 # --- YANLIŞ SORU HAVUZU & AI BRANŞ DENEMESİ (ADIM 2 + ADIM 3) ---
     with tab_ai:
-        st.markdown("### 🧠 Yanlış Soru Havuzu & AI Branş Denemesi")
-    
-        BUCKET_ADI = "yanlis-sorular"
-        DERS_KONULARI = {
-            "Türkçe": [
-                "Sözcükte Anlam", "Cümlede Anlam", "Paragraf", "Ses Bilgisi",
-                "Yazım Kuralları", "Noktalama İşaretleri", "Sözcük Türleri", "Cümlenin Ögeleri", "Diğer"
-            ],
-            "Matematik": [
-                "Temel Kavramlar", "Sayı ve Kesir Problemleri", "Üslü / Köklü İfadeler",
-                "Mutlak Değer / Eşitsizlik", "Fonksiyonlar", "Polinomlar",
-                "Logaritma / Diziler", "Trigonometri", "Türev / İntegral", "Diğer"
-            ],
-            "Geometri": [
-                "Üçgende Açılar ve Uzunluk", "Üçgende Alan", "Çokgenler ve Dörtgenler",
-                "Çember ve Daire", "Analitik Geometri", "Katı Cisimler", "Diğer"
-            ],
-            "Fizik": [
-                "Fizik Bilimine Giriş ve Madde", "Hareket ve Kuvvet", "İş, Güç ve Enerji",
-                "Elektrik ve Manyetizma", "Optik ve Dalgalar", "Diğer"
-            ],
-            "Kimya": [
-                "Kimya Bilimi ve Atom", "Periyodik Sistem ve Etkileşimler",
-                "Mol ve Kimyasal Hesaplamalar", "Çözeltiler ve Tepkimeler", "Diğer"
-            ],
-            "Biyoloji": [
-                "Canlıların Temel Bileşenleri", "Hücre ve Bölünmeler",
-                "Kalıtım ve Ekoloji", "Sistemler", "Diğer"
-            ],
-            "Sosyal Bilimler": [
-                "Tarih", "Coğrafya", "Felsefe", "Din Kültürü", "Diğer"
-            ],
-        }
-    
-        def gemini_istemci_getir():
-            api_key = st.secrets.get("GEMINI_API_KEY", "")
-            if not api_key:
-                raise ValueError("Streamlit Secrets içinde GEMINI_API_KEY tanımlı değil.")
-            return genai.Client(api_key=api_key)
-    
-        def yanlis_soru_yukle(ogr_id, ders_adi, konu_adi, ozel_konu, not_metni, yuklenen_dosya):
-            final_konu = (ozel_konu or "").strip() if konu_adi == "Diğer" else konu_adi
-            if not final_konu:
-                return False, "Lütfen bir konu seçin veya konu adını yazın."
-            if yuklenen_dosya is None:
-                return False, "Lütfen yanlış yaptığınız sorunun fotoğrafını yükleyin."
-    
-            uzanti = yuklenen_dosya.name.split(".")[-1].lower() if "." in yuklenen_dosya.name else "png"
-            if uzanti not in ["jpg", "jpeg", "png", "webp"]:
-                uzanti = "png"
-    
-            dosya_adi = f"ogrenci_{ogr_id}/{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}.{uzanti}"
-            icerik_bytes = yuklenen_dosya.getvalue()
-    
-            try:
-                supabase.storage.from_(BUCKET_ADI).upload(
-                    path=dosya_adi,
-                    file=icerik_bytes,
-                    file_options={"content-type": yuklenen_dosya.type or f"image/{uzanti}"}
-                )
-            except Exception as e:
-                return False, f"Fotoğraf Supabase Storage'a yüklenemedi: {e}"
-    
-            try:
-                kayit = {
-                    "ogrenci_id": int(ogr_id),
-                    "ders": str(ders_adi),
-                    "konu": str(final_konu),
-                    "ogrenci_notu": str(not_metni or "").strip(),
-                    "storage_yolu": dosya_adi,
-                    "foto_silindi": False,
-                    "durum": "bekliyor",
-                }
-                supabase.table("yanlis_sorular").insert(kayit).execute()
-                return True, f"Yanlış soru ({ders_adi} - {final_konu}) havuza eklendi."
-            except Exception as e:
-                try:
-                    supabase.storage.from_(BUCKET_ADI).remove([dosya_adi])
-                except Exception:
-                    pass
-                return False, f"Veritabanı kaydı sırasında hata oluştu: {e}"
-    
-        def ai_yanlislari_analiz_et(ders_adi, bekleyen_kayitlar):
-            client = gemini_istemci_getir()
-            icerikler = []
-            konu_ozetleri = []
-    
-            for idx, k in enumerate(bekleyen_kayitlar, start=1):
-                konu_bilgisi = f"Soru {idx}: Seçilen Konu = {k.get('konu')}"
-                if k.get("ogrenci_notu"):
-                    konu_bilgisi += f" | Öğrenci Notu = {k.get('ogrenci_notu')}"
-                konu_ozetleri.append(konu_bilgisi)
-    
-                if not k.get("foto_silindi") and k.get("storage_yolu"):
-                    try:
-                        img_bytes = supabase.storage.from_(BUCKET_ADI).download(k["storage_yolu"])
-                        pil_img = Image.open(io.BytesIO(img_bytes))
-                        icerikler.append(f"Görsel {idx} ({k.get('konu')}):")
-                        icerikler.append(pil_img)
-                    except Exception:
-                        pass
-    
-            prompt = f"""
-            Sen uzman bir YKS (TYT-AYT) koçu ve {ders_adi} öğretmenisin.
-            Aşağıda öğrencinin {ders_adi} dersinden yanlış yaptığı soruların konu bilgileri ve fotoğrafları yer alıyor:
-            {chr(10).join(konu_ozetleri)}
-    
-            Görevin:
-            1. Görsellerdeki soruları ve verilen konuları inceleyerek öğrencinin tam olarak hangi alt kazanımlarda/konularda eksik olduğunu tespit et.
-            2. Kısa, net ve koçluk diline uygun bir eksik analizi çıkar.
-            3. Yanıtını SADECE geçerli bir JSON objesi olarak döndür (Markdown kod bloğu veya ekstra açıklama ekleme):
-            {{
-                "tespit_edilen_konular": "Virgülle ayrılmış eksik konu/alt başlık listesi",
-                "hata_ozeti": "Öğrencinin nerede takıldığını anlatan 2-3 cümlelik net koçluk özeti"
-            }}
-            """
-            icerikler.append(prompt)
-    
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=icerikler,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    temperature=0.3
-                )
+    st.markdown("### 🧠 Yanlış Soru Havuzu & AI Branş Denemesi")
+
+    BUCKET_ADI = "yanlis-sorular"
+    MODEL_ADI = "gemini-3.8-flash"
+    DERS_KONULARI = {
+        "Türkçe": [
+            "Sözcükte Anlam", "Cümlede Anlam", "Paragraf", "Ses Bilgisi",
+            "Yazım Kuralları", "Noktalama İşaretleri", "Sözcük Türleri", "Cümlenin Ögeleri", "Diğer"
+        ],
+        "Matematik": [
+            "Temel Kavramlar", "Sayı ve Kesir Problemleri", "Üslü / Köklü İfadeler",
+            "Mutlak Değer / Eşitsizlik", "Fonksiyonlar", "Polinomlar",
+            "Logaritma / Diziler", "Trigonometri", "Türev / İntegral", "Diğer"
+        ],
+        "Geometri": [
+            "Üçgende Açılar ve Uzunluk", "Üçgende Alan", "Çokgenler ve Dörtgenler",
+            "Çember ve Daire", "Analitik Geometri", "Katı Cisimler", "Diğer"
+        ],
+        "Fizik": [
+            "Fizik Bilimine Giriş ve Madde", "Hareket ve Kuvvet", "İş, Güç ve Enerji",
+            "Elektrik ve Manyetizma", "Optik ve Dalgalar", "Diğer"
+        ],
+        "Kimya": [
+            "Kimya Bilimi ve Atom", "Periyodik Sistem ve Etkileşimler",
+            "Mol ve Kimyasal Hesaplamalar", "Çözeltiler ve Tepkimeler", "Diğer"
+        ],
+        "Biyoloji": [
+            "Canlıların Temel Bileşenleri", "Hücre ve Bölünmeler",
+            "Kalıtım ve Ekoloji", "Sistemler", "Diğer"
+        ],
+        "Sosyal Bilimler": [
+            "Tarih", "Coğrafya", "Felsefe", "Din Kültürü", "Diğer"
+        ],
+    }
+
+    def gemini_istemci_getir():
+        api_key = st.secrets.get("GEMINI_API_KEY", "")
+        if not api_key:
+            raise ValueError("Streamlit Secrets içinde GEMINI_API_KEY tanımlı değil.")
+        return genai.Client(api_key=api_key)
+
+    def yanlis_soru_yukle(ogr_id, ders_adi, konu_adi, ozel_konu, not_metni, yuklenen_dosya):
+        final_konu = (ozel_konu or "").strip() if konu_adi == "Diğer" else konu_adi
+        if not final_konu:
+            return False, "Lütfen bir konu seçin veya konu adını yazın."
+        if yuklenen_dosya is None:
+            return False, "Lütfen yanlış yaptığınız sorunun fotoğrafını yükleyin."
+
+        uzanti = yuklenen_dosya.name.split(".")[-1].lower() if "." in yuklenen_dosya.name else "png"
+        if uzanti not in ["jpg", "jpeg", "png", "webp"]:
+            uzanti = "png"
+
+        dosya_adi = f"ogrenci_{ogr_id}/{pd.Timestamp.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}.{uzanti}"
+        icerik_bytes = yuklenen_dosya.getvalue()
+
+        try:
+            supabase.storage.from_(BUCKET_ADI).upload(
+                path=dosya_adi,
+                file=icerik_bytes,
+                file_options={"content-type": yuklenen_dosya.type or f"image/{uzanti}"}
             )
-            return json.loads(response.text)
-    
-        def ai_brans_denemesi_uret(ogr_id, ders_adi, tespit_konular, hata_ozeti, soru_sayisi, zorluk, bekleyen_kayitlar):
-            client = gemini_istemci_getir()
-            sinav_turu = secili_ogrenci.get("sinav_turu", "TYT") if isinstance(secili_ogrenci, dict) else "TYT"
-    
-            prompt = f"""
-            Sen deneyimli bir YKS ({sinav_turu}) {ders_adi} soru yazarısın.
-            Öğrencinin yanlış yaptığı sorulardan tespit edilen eksik konular: {tespit_konular}
-            Hata analizi özeti: {hata_ozeti}
-            İstenen zorluk seviyesi: {zorluk}
-            İstenen soru sayısı: {soru_sayisi}
-    
-            Kurallar:
-            - Tam olarak {soru_sayisi} adet özgün, ÖSYM formatında 5 şıklı (A, B, C, D, E) çoktan seçmeli soru yaz.
-            - Sorular doğrudan tespit edilen eksik konulara ve öğrencinin hata yaptığı noktalara odaklansın.
-            - Matematik/Fen sorularında ifadeleri sade, net ve okunabilir yaz (karmaşık Ham LaTeX yerine okunaklı semboller veya basit gösterim kullan).
-            - Her soru için tek bir doğru cevap şıkkı ("A", "B", "C", "D" veya "E") ve kısa çözüm açıklaması yaz.
-            - Yanıtını SADECE aşağıdaki şemaya uygun geçerli bir JSON objesi olarak ver:
-            {{
-                "baslik": "{ders_adi} - Eksik Kapatma Branş Denemesi",
-                "sorular": [
-                    {{
-                        "soru_no": 1,
-                        "konu": "İlgili alt konu",
-                        "soru": "Soru metni...",
-                        "secenekler": {{
-                            "A": "A şıkkı",
-                            "B": "B şıkkı",
-                            "C": "C şıkkı",
-                            "D": "D şıkkı",
-                            "E": "E şıkkı"
-                        }},
-                        "dogru_cevap": "A",
-                        "aciklama": "Kısa çözüm açıklaması"
-                    }}
-                ]
-            }}
-            """
-    
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    temperature=0.5
-                )
-            )
-            veri = json.loads(response.text)
-            sorular_listesi = veri.get("sorular", [])
-            if not sorular_listesi:
-                raise ValueError("Yapay zeka soru listesi üretemedi, lütfen tekrar deneyin.")
-    
-            deneme_baslik = veri.get("baslik") or f"{ders_adi} AI Branş Denemesi ({len(sorular_listesi)} Soru)"
-    
-            # 1. Üretilen denemeyi veritabanına kaydet
-            supabase.table("ai_denemeler").insert({
+        except Exception as e:
+            return False, f"Fotoğraf Supabase Storage'a yüklenemedi: {e}"
+
+        try:
+            kayit = {
                 "ogrenci_id": int(ogr_id),
-                "baslik": deneme_baslik,
-                "ders": ders_adi,
-                "tespit_edilen_konular": tespit_konular,
-                "soru_sayisi": len(sorular_listesi),
-                "sorular_json": sorular_listesi,
-                "durum": "cozulmeyi_bekliyor"
-            }).execute()
-    
-            # 2. Deneme başarıyla kaydedildikten sonra Storage'daki fotoğrafları sil, konu kayıtlarını koru
-            silinecek_yollar = [
-                k["storage_yolu"] for k in bekleyen_kayitlar
-                if not k.get("foto_silindi") and k.get("storage_yolu")
-            ]
-            if silinecek_yollar:
+                "ders": str(ders_adi),
+                "konu": str(final_konu),
+                "ogrenci_notu": str(not_metni or "").strip(),
+                "storage_yolu": dosya_adi,
+                "foto_silindi": False,
+                "durum": "bekliyor",
+            }
+            supabase.table("yanlis_sorular").insert(kayit).execute()
+            return True, f"Yanlış soru ({ders_adi} - {final_konu}) havuza eklendi."
+        except Exception as e:
+            try:
+                supabase.storage.from_(BUCKET_ADI).remove([dosya_adi])
+            except Exception:
+                pass
+            return False, f"Veritabanı kaydı sırasında hata oluştu: {e}"
+
+    def ai_yanlislari_analiz_et(ders_adi, bekleyen_kayitlar):
+        client = gemini_istemci_getir()
+        icerikler = []
+        konu_ozetleri = []
+
+        for idx, k in enumerate(bekleyen_kayitlar, start=1):
+            konu_bilgisi = f"Soru {idx}: Seçilen Konu = {k.get('konu')}"
+            if k.get("ogrenci_notu"):
+                konu_bilgisi += f" | Öğrenci Notu = {k.get('ogrenci_notu')}"
+            konu_ozetleri.append(konu_bilgisi)
+
+            if not k.get("foto_silindi") and k.get("storage_yolu"):
                 try:
-                    supabase.storage.from_(BUCKET_ADI).remove(silinecek_yollar)
+                    img_bytes = supabase.storage.from_(BUCKET_ADI).download(k["storage_yolu"])
+                    pil_img = Image.open(io.BytesIO(img_bytes))
+                    icerikler.append(f"Görsel {idx} ({k.get('konu')}):")
+                    icerikler.append(pil_img)
                 except Exception:
                     pass
-    
-            for k in bekleyen_kayitlar:
-                supabase.table("yanlis_sorular").update({
-                    "storage_yolu": None,
-                    "foto_silindi": True,
-                    "ai_tespit_konu": tespit_konular,
-                    "ai_hata_analizi": hata_ozeti,
-                    "durum": "deneme_uretildi"
-                }).eq("id", k["id"]).execute()
-    
-            return deneme_baslik, len(sorular_listesi)
-    
-        # --- 1. YANLIŞ SORU YÜKLEME FORMU ---
-        with st.expander("📤 Yanlış Soru Fotoğrafı Yükle", expanded=True):
-            st.caption("Yanlış çözdüğün sorunun net fotoğrafını yükle; ders ve konu seçerek branş havuzunda biriktirelim.")
-    
-            c_y1, c_y2 = st.columns(2)
-            with c_y1:
-                sec_ders = st.selectbox("Ders Seç:", list(DERS_KONULARI.keys()), key=f"ys_ders_{secili_id}")
-            with c_y2:
-                konu_listesi = DERS_KONULARI.get(sec_ders, ["Diğer"])
-                sec_konu = st.selectbox("Konu Seç:", konu_listesi, key=f"ys_konu_{secili_id}")
-    
-            ozel_konu_giris = ""
-            if sec_konu == "Diğer":
-                ozel_konu_giris = st.text_input(
-                    "Konu Başlığını Yaz:",
-                    placeholder="Örn: Olasılık veya Çemberde Uzunluk",
-                    key=f"ys_ozel_konu_{secili_id}"
-                )
-    
-            ogr_notu_giris = st.text_input(
-                "Kısa Not / Kaynak (İsteğe Bağlı):",
-                placeholder="Örn: İşlem hatası yaptım / 3D TYT Soru Bankası",
-                key=f"ys_not_{secili_id}"
+
+        prompt = f"""
+        Sen uzman bir YKS (TYT-AYT) koçu ve {ders_adi} öğretmenisin.
+        Aşağıda öğrencinin {ders_adi} dersinden yanlış yaptığı soruların konu bilgileri ve fotoğrafları yer alıyor:
+        {chr(10).join(konu_ozetleri)}
+
+        Görevin:
+        1. Görsellerdeki soruları ve verilen konuları inceleyerek öğrencinin tam olarak hangi alt kazanımlarda/konularda eksik olduğunu tespit et.
+        2. Kısa, net ve koçluk diline uygun bir eksik analizi çıkar.
+        3. Yanıtını SADECE geçerli bir JSON objesi olarak döndür (Markdown kod bloğu veya ekstra açıklama ekleme):
+        {{
+            "tespit_edilen_konular": "Virgülle ayrılmış eksik konu/alt başlık listesi",
+            "hata_ozeti": "Öğrencinin nerede takıldığını anlatan 2-3 cümlelik net koçluk özeti"
+        }}
+        """
+        icerikler.append(prompt)
+
+        response = client.models.generate_content(
+            model=MODEL_ADI,
+            contents=icerikler,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0.3
             )
-    
-            yuklenen_gorsel = st.file_uploader(
-                "Soru Fotoğrafı Seç (JPG, PNG, WEBP):",
-                type=["jpg", "jpeg", "png", "webp"],
-                key=f"ys_dosya_{secili_id}"
-            )
-    
-            if yuklenen_gorsel is not None:
-                st.image(yuklenen_gorsel, caption="Yüklenecek Soru Önizlemesi", use_container_width=True)
-    
-            if st.button("📥 Yanlış Soruyu Havuza Ekle", type="primary", use_container_width=True, key=f"btn_ys_ekle_{secili_id}"):
-                ok, mesaj = yanlis_soru_yukle(
-                    secili_id,
-                    sec_ders,
-                    sec_konu,
-                    ozel_konu_giris,
-                    ogr_notu_giris,
-                    yuklenen_gorsel
-                )
-                if ok:
-                    st.success(mesaj)
-                    st.rerun()
-                else:
-                    st.error(mesaj)
-    
-        # Havuz verilerini çek
-        res_havuz = (
-            supabase.table("yanlis_sorular")
-            .select("*")
-            .eq("ogrenci_id", secili_id)
-            .order("id", desc=True)
-            .execute()
         )
-        havuz_kayitlari = res_havuz.data or []
-        bekleyen_tum = [k for k in havuz_kayitlari if k.get("durum") == "bekliyor"]
-    
-        # --- 2. KOÇ / ADMIN PANELİ: YAPAY ZEKA ANALİZİ VE BRANŞ DENEMESİ ÜRETİMİ ---
-        if st.session_state.get("rol") == "ADMIN":
-            st.divider()
-            st.markdown("#### 🤖 Koç AI Asistanı — Eksik Tespiti & Branş Denemesi Hazırlama")
-    
-            if not bekleyen_tum:
-                st.info("Şu an analiz bekleyen yeni yanlış soru bulunmuyor. Öğrenci yanlış soru yüklediğinde burada branş bazında görünecek.")
-            else:
-                bekleyen_dersler = sorted(list({k.get("ders") for k in bekleyen_tum if k.get("ders")}))
-                sec_ai_ders = st.selectbox(
-                    "Analiz Edilecek Branşı Seç:",
-                    bekleyen_dersler,
-                    key=f"ai_sec_ders_{secili_id}"
-                )
-                secili_ders_bekleyenler = [k for k in bekleyen_tum if k.get("ders") == sec_ai_ders]
-                st.caption(f"📌 **{sec_ai_ders}** branşında analiz bekleyen **{len(secili_ders_bekleyenler)}** yanlış soru var.")
-    
-                analiz_state_key = f"ai_analiz_sonuc_{secili_id}_{sec_ai_ders}"
-    
-                if st.button(f"🔍 {sec_ai_ders} Yanlışlarını Analiz Et", use_container_width=True, key=f"btn_ai_analiz_{secili_id}"):
-                    with st.spinner("Yapay zeka öğrencinin yanlış sorularını inceliyor..."):
-                        try:
-                            sonuc = ai_yanlislari_analiz_et(sec_ai_ders, secili_ders_bekleyenler)
-                            st.session_state[analiz_state_key] = sonuc
-                        except Exception as e:
-                            st.error(f"AI analizi sırasında hata oluştu: {e}")
-    
-                if analiz_state_key in st.session_state:
-                    analiz_veri = st.session_state[analiz_state_key]
-                    tespit_konu_metni = analiz_veri.get("tespit_edilen_konular", "")
-                    hata_ozeti_metni = analiz_veri.get("hata_ozeti", "")
-    
-                    with st.container(border=True):
-                        st.success(f"🎯 **Şu Konularda Eksik Tespit Edildi:** {tespit_konu_metni}")
-                        if hata_ozeti_metni:
-                            st.write(f"🩺 **Hata Analizi:** {hata_ozeti_metni}")
-    
-                        st.markdown("**❓ Bu konudan kaç soruluk branş denemesi yazayım?**")
-                        a_c1, a_c2 = st.columns(2)
-                        with a_c1:
-                            istenen_soru_sayisi = st.number_input(
-                                "Soru Sayısı:",
-                                min_value=1,
-                                max_value=25,
-                                value=5,
-                                step=1,
-                                key=f"ai_soru_sayi_{secili_id}_{sec_ai_ders}"
-                            )
-                        with a_c2:
-                            istenen_zorluk = st.selectbox(
-                                "Zorluk Seviyesi:",
-                                ["Orta (Öğretici)", "ÖSYM Tarzı (Sınav Ayarı)", "Zorlayıcı (Yeni Nesil)"],
-                                index=1,
-                                key=f"ai_zorluk_{secili_id}_{sec_ai_ders}"
-                            )
-    
-                        st.caption("ℹ️ Onayladığında branş denemesi oluşturulur ve hafıza dolmaması için kaynak fotoğraflar Storage'dan otomatik silinir (konu kayıtları sistemde kalır).")
-    
-                        if st.button(
-                            f"🚀 Onayla ve {istenen_soru_sayisi} Soruluk {sec_ai_ders} Denemesi Oluştur",
-                            type="primary",
-                            use_container_width=True,
-                            key=f"btn_ai_uret_{secili_id}_{sec_ai_ders}"
-                        ):
-                            with st.spinner("Kişiye özel branş denemesi hazırlanıyor ve fotoğraflar temizleniyor..."):
-                                try:
-                                    d_baslik, uretilen_adet = ai_brans_denemesi_uret(
-                                        secili_id,
-                                        sec_ai_ders,
-                                        tespit_konu_metni,
-                                        hata_ozeti_metni,
-                                        int(istenen_soru_sayisi),
-                                        istenen_zorluk,
-                                        secili_ders_bekleyenler
-                                    )
-                                    del st.session_state[analiz_state_key]
-                                    st.success(f"✅ '{d_baslik}' ({uretilen_adet} soru) oluşturuldu ve kaynak fotoğraflar otomatik temizlendi!")
-                                    st.rerun()
-                                except Exception as e:
-                                    st.error(f"Deneme üretilirken hata oluştu: {e}")
-    
-        st.divider()
-    
-        # --- 3. BRANŞ BAZINDA BİRİKEN YANLIŞ SORU HAVUZU ---
-        st.markdown("#### 📚 Branş Bazında Yanlış Soru Havuzu")
-    
-        if not havuz_kayitlari:
-            st.info("Bu öğrenci için henüz yanlış soru kaydı bulunmuyor.")
-        else:
-            bekleyen_sayisi = len(bekleyen_tum)
-            uretildi_sayisi = sum(1 for k in havuz_kayitlari if k.get("durum") == "deneme_uretildi")
-    
-            m1, m2, m3 = st.columns(3)
-            m1.metric("Toplam Kayıt", len(havuz_kayitlari))
-            m2.metric("Deneme Bekleyen", bekleyen_sayisi)
-            m3.metric("Denemeye Dönüşen", uretildi_sayisi)
-    
-            filtre_dersler = ["Tümü"] + sorted(list({k.get("ders", "") for k in havuz_kayitlari if k.get("ders")}))
-            sec_filtre_ders = st.selectbox("Branşa Göre Filtrele:", filtre_dersler, key=f"ys_filtre_{secili_id}")
-    
-            gorunecek_kayitlar = [
-                k for k in havuz_kayitlari
-                if sec_filtre_ders == "Tümü" or k.get("ders") == sec_filtre_ders
+        return json.loads(response.text)
+
+    def ai_brans_denemesi_uret(ogr_id, ders_adi, tespit_konular, hata_ozeti, soru_sayisi, zorluk, bekleyen_kayitlar):
+        client = gemini_istemci_getir()
+        sinav_turu = secili_ogrenci.get("sinav_turu", "TYT") if isinstance(secili_ogrenci, dict) else "TYT"
+
+        prompt = f"""
+        Sen deneyimli bir YKS ({sinav_turu}) {ders_adi} soru yazarısın.
+        Öğrencinin yanlış yaptığı sorulardan tespit edilen eksik konular: {tespit_konular}
+        Hata analizi özeti: {hata_ozeti}
+        İstenen zorluk seviyesi: {zorluk}
+        İstenen soru sayısı: {soru_sayisi}
+
+        Kurallar:
+        - Tam olarak {soru_sayisi} adet özgün, ÖSYM formatında 5 şıklı (A, B, C, D, E) çoktan seçmeli soru yaz.
+        - Sorular doğrudan tespit edilen eksik konulara ve öğrencinin hata yaptığı noktalara odaklansın.
+        - Matematik/Fen sorularında ifadeleri sade, net ve okunabilir yaz (karmaşık ham LaTeX yerine okunaklı semboller veya basit gösterim kullan).
+        - Her soru için tek bir doğru cevap şıkkı ("A", "B", "C", "D" veya "E") ve kısa çözüm açıklaması yaz.
+        - Yanıtını SADECE aşağıdaki şemaya uygun geçerli bir JSON objesi olarak ver:
+        {{
+            "baslik": "{ders_adi} - Eksik Kapatma Branş Denemesi",
+            "sorular": [
+                {{
+                    "soru_no": 1,
+                    "konu": "İlgili alt konu",
+                    "soru": "Soru metni...",
+                    "secenekler": {{
+                        "A": "A şıkkı",
+                        "B": "B şıkkı",
+                        "C": "C şıkkı",
+                        "D": "D şıkkı",
+                        "E": "E şıkkı"
+                    }},
+                    "dogru_cevap": "A",
+                    "aciklama": "Kısa çözüm açıklaması"
+                }}
             ]
-    
-            for kayit in gorunecek_kayitlar:
-                durum_etiketi = "⏳ Bekliyor" if kayit.get("durum") == "bekliyor" else "✅ Deneme Üretildi (Foto Silindi)"
-                baslik_satiri = f"{kayit.get('ders')} • {kayit.get('konu')} — {durum_etiketi}"
-                with st.expander(baslik_satiri, expanded=False):
-                    st.write(f"**Tarih:** {str(kayit.get('olusturulma_tarihi', ''))[:16]}")
-                    if kayit.get("ogrenci_notu"):
-                        st.write(f"**Not:** {kayit.get('ogrenci_notu')}")
-                    if kayit.get("ai_tespit_konu"):
-                        st.write(f"**AI Tespit Konusu:** {kayit.get('ai_tespit_konu')}")
-                    if kayit.get("ai_hata_analizi"):
-                        st.write(f"**AI Hata Özeti:** {kayit.get('ai_hata_analizi')}")
-    
-                    if not kayit.get("foto_silindi") and kayit.get("storage_yolu"):
-                        try:
-                            public_url = supabase.storage.from_(BUCKET_ADI).get_public_url(kayit["storage_yolu"])
-                            st.image(public_url, caption=f"{kayit.get('ders')} - {kayit.get('konu')}", use_container_width=True)
-                        except Exception:
-                            st.caption("Görsel bağlantısı şu an görüntülenemedi.")
-                    else:
-                        st.caption("🗑️ Deneme oluşturulduğu için fotoğraf Storage'dan silindi; ders ve konu kaydı korundu.")     
+        }}
+        """
+
+        response = client.models.generate_content(
+            model=MODEL_ADI,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                temperature=0.5
+            )
+        )
+        veri = json.loads(response.text)
+        sorular_listesi = veri.get("sorular", [])
+        if not sorular_listesi:
+            raise ValueError("Yapay zeka soru listesi üretemedi, lütfen tekrar deneyin.")
+
+        deneme_baslik = veri.get("baslik") or f"{ders_adi} AI Branş Denemesi ({len(sorular_listesi)} Soru)"
+
+        supabase.table("ai_denemeler").insert({
+            "ogrenci_id": int(ogr_id),
+            "baslik": deneme_baslik,
+            "ders": ders_adi,
+            "tespit_edilen_konular": tespit_konular,
+            "soru_sayisi": len(sorular_listesi),
+            "sorular_json": sorular_listesi,
+            "durum": "cozulmeyi_bekliyor"
+        }).execute()
+
+        silinecek_yollar = [
+            k["storage_yolu"] for k in bekleyen_kayitlar
+            if not k.get("foto_silindi") and k.get("storage_yolu")
+        ]
+        if silinecek_yollar:
+            try:
+                supabase.storage.from_(BUCKET_ADI).remove(silinecek_yollar)
+            except Exception:
+                pass
+
+        for k in bekleyen_kayitlar:
+            supabase.table("yanlis_sorular").update({
+                "storage_yolu": None,
+                "foto_silindi": True,
+                "ai_tespit_konu": tespit_konular,
+                "ai_hata_analizi": hata_ozeti,
+                "durum": "deneme_uretildi"
+            }).eq("id", k["id"]).execute()
+
+        return deneme_baslik, len(sorular_listesi)
+
+    # --- 1. YANLIŞ SORU YÜKLEME FORMU ---
+    with st.expander("📤 Yanlış Soru Fotoğrafı Yükle", expanded=True):
+        st.caption("Yanlış çözdüğün sorunun net fotoğrafını yükle; ders ve konu seçerek branş havuzunda biriktirelim.")
+
+        c_y1, c_y2 = st.columns(2)
+        with c_y1:
+            sec_ders = st.selectbox("Ders Seç:", list(DERS_KONULARI.keys()), key=f"ys_ders_{secili_id}")
+        with c_y2:
+            konu_listesi = DERS_KONULARI.get(sec_ders, ["Diğer"])
+            sec_konu = st.selectbox("Konu Seç:", konu_listesi, key=f"ys_konu_{secili_id}")
+
+        ozel_konu_giris = ""
+        if sec_konu == "Diğer":
+            ozel_konu_giris = st.text_input(
+                "Konu Başlığını Yaz:",
+                placeholder="Örn: Olasılık veya Çemberde Uzunluk",
+                key=f"ys_ozel_konu_{secili_id}"
+            )
+
+        ogr_notu_giris = st.text_input(
+            "Kısa Not / Kaynak (İsteğe Bağlı):",
+            placeholder="Örn: İşlem hatası yaptım / 3D TYT Soru Bankası",
+            key=f"ys_not_{secili_id}"
+        )
+
+        yuklenen_gorsel = st.file_uploader(
+            "Soru Fotoğrafı Seç (JPG, PNG, WEBP):",
+            type=["jpg", "jpeg", "png", "webp"],
+            key=f"ys_dosya_{secili_id}"
+        )
+
+        if yuklenen_gorsel is not None:
+            st.image(yuklenen_gorsel, caption="Yüklenecek Soru Önizlemesi", use_container_width=True)
+
+        if st.button("📥 Yanlış Soruyu Havuza Ekle", type="primary", use_container_width=True, key=f"btn_ys_ekle_{secili_id}"):
+            ok, mesaj = yanlis_soru_yukle(
+                secili_id,
+                sec_ders,
+                sec_konu,
+                ozel_konu_giris,
+                ogr_notu_giris,
+                yuklenen_gorsel
+            )
+            if ok:
+                st.success(mesaj)
+                st.rerun()
+            else:
+                st.error(mesaj)
+
+    res_havuz = (
+        supabase.table("yanlis_sorular")
+        .select("*")
+        .eq("ogrenci_id", secili_id)
+        .order("id", desc=True)
+        .execute()
+    )
+    havuz_kayitlari = res_havuz.data or []
+    bekleyen_tum = [k for k in havuz_kayitlari if k.get("durum") == "bekliyor"]
+
+    # --- 2. KOÇ / ADMIN PANELİ: YAPAY ZEKA ANALİZİ VE BRANŞ DENEMESİ ÜRETİMİ ---
+    if st.session_state.get("rol") == "ADMIN":
+        st.divider()
+        st.markdown("#### 🤖 Koç AI Asistanı — Eksik Tespiti & Branş Denemesi Hazırlama")
+
+        if not bekleyen_tum:
+            st.info("Şu an analiz bekleyen yeni yanlış soru bulunmuyor. Öğrenci yanlış soru yüklediğinde burada branş bazında görünecek.")
+        else:
+            bekleyen_dersler = sorted(list({k.get("ders") for k in bekleyen_tum if k.get("ders")}))
+            sec_ai_ders = st.selectbox(
+                "Analiz Edilecek Branşı Seç:",
+                bekleyen_dersler,
+                key=f"ai_sec_ders_{secili_id}"
+            )
+            secili_ders_bekleyenler = [k for k in bekleyen_tum if k.get("ders") == sec_ai_ders]
+            st.caption(f"📌 **{sec_ai_ders}** branşında analiz bekleyen **{len(secili_ders_bekleyenler)}** yanlış soru var.")
+
+            analiz_state_key = f"ai_analiz_sonuc_{secili_id}_{sec_ai_ders}"
+
+            if st.button(f"🔍 {sec_ai_ders} Yanlışlarını Analiz Et", use_container_width=True, key=f"btn_ai_analiz_{secili_id}"):
+                with st.spinner("Yapay zeka öğrencinin yanlış sorularını inceliyor..."):
+                    try:
+                        sonuc = ai_yanlislari_analiz_et(sec_ai_ders, secili_ders_bekleyenler)
+                        st.session_state[analiz_state_key] = sonuc
+                    except Exception as e:
+                        st.error(f"AI analizi sırasında hata oluştu: {e}")
+
+            if analiz_state_key in st.session_state:
+                analiz_veri = st.session_state[analiz_state_key]
+                tespit_konu_metni = analiz_veri.get("tespit_edilen_konular", "")
+                hata_ozeti_metni = analiz_veri.get("hata_ozeti", "")
+
+                with st.container(border=True):
+                    st.success(f"🎯 **Şu Konularda Eksik Tespit Edildi:** {tespit_konu_metni}")
+                    if hata_ozeti_metni:
+                        st.write(f"🩺 **Hata Analizi:** {hata_ozeti_metni}")
+
+                    st.markdown("**❓ Bu konudan kaç soruluk branş denemesi yazayım?**")
+                    a_c1, a_c2 = st.columns(2)
+                    with a_c1:
+                        istenen_soru_sayisi = st.number_input(
+                            "Soru Sayısı:",
+                            min_value=1,
+                            max_value=25,
+                            value=5,
+                            step=1,
+                            key=f"ai_soru_sayi_{secili_id}_{sec_ai_ders}"
+                        )
+                    with a_c2:
+                        istenen_zorluk = st.selectbox(
+                            "Zorluk Seviyesi:",
+                            ["Orta (Öğretici)", "ÖSYM Tarzı (Sınav Ayarı)", "Zorlayıcı (Yeni Nesil)"],
+                            index=1,
+                            key=f"ai_zorluk_{secili_id}_{sec_ai_ders}"
+                        )
+
+                    st.caption("ℹ️ Onayladığında branş denemesi oluşturulur ve hafıza dolmaması için kaynak fotoğraflar Storage'dan otomatik silinir (konu kayıtları sistemde kalır).")
+
+                    if st.button(
+                        f"🚀 Onayla ve {istenen_soru_sayisi} Soruluk {sec_ai_ders} Denemesi Oluştur",
+                        type="primary",
+                        use_container_width=True,
+                        key=f"btn_ai_uret_{secili_id}_{sec_ai_ders}"
+                    ):
+                        with st.spinner("Kişiye özel branş denemesi hazırlanıyor ve fotoğraflar temizleniyor..."):
+                            try:
+                                d_baslik, uretilen_adet = ai_brans_denemesi_uret(
+                                    secili_id,
+                                    sec_ai_ders,
+                                    tespit_konu_metni,
+                                    hata_ozeti_metni,
+                                    int(istenen_soru_sayisi),
+                                    istenen_zorluk,
+                                    secili_ders_bekleyenler
+                                )
+                                del st.session_state[analiz_state_key]
+                                st.success(f"✅ '{d_baslik}' ({uretilen_adet} soru) oluşturuldu ve kaynak fotoğraflar otomatik temizlendi!")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Deneme üretilirken hata oluştu: {e}")
+
+    st.divider()
+
+    # --- 3. BRANŞ BAZINDA BİRİKEN YANLIŞ SORU HAVUZU ---
+    st.markdown("#### 📚 Branş Bazında Yanlış Soru Havuzu")
+
+    if not havuz_kayitlari:
+        st.info("Bu öğrenci için henüz yanlış soru kaydı bulunmuyor.")
+    else:
+        bekleyen_sayisi = len(bekleyen_tum)
+        uretildi_sayisi = sum(1 for k in havuz_kayitlari if k.get("durum") == "deneme_uretildi")
+
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Toplam Kayıt", len(havuz_kayitlari))
+        m2.metric("Deneme Bekleyen", bekleyen_sayisi)
+        m3.metric("Denemeye Dönüşen", uretildi_sayisi)
+
+        filtre_dersler = ["Tümü"] + sorted(list({k.get("ders", "") for k in havuz_kayitlari if k.get("ders")}))
+        sec_filtre_ders = st.selectbox("Branşa Göre Filtrele:", filtre_dersler, key=f"ys_filtre_{secili_id}")
+
+        gorunecek_kayitlar = [
+            k for k in havuz_kayitlari
+            if sec_filtre_ders == "Tümü" or k.get("ders") == sec_filtre_ders
+        ]
+
+        for kayit in gorunecek_kayitlar:
+            durum_etiketi = "⏳ Bekliyor" if kayit.get("durum") == "bekliyor" else "✅ Deneme Üretildi (Foto Silindi)"
+            baslik_satiri = f"{kayit.get('ders')} • {kayit.get('konu')} — {durum_etiketi}"
+            with st.expander(baslik_satiri, expanded=False):
+                st.write(f"**Tarih:** {str(kayit.get('olusturulma_tarihi', ''))[:16]}")
+                if kayit.get("ogrenci_notu"):
+                    st.write(f"**Not:** {kayit.get('ogrenci_notu')}")
+                if kayit.get("ai_tespit_konu"):
+                    st.write(f"**AI Tespit Konusu:** {kayit.get('ai_tespit_konu')}")
+                if kayit.get("ai_hata_analizi"):
+                    st.write(f"**AI Hata Özeti:** {kayit.get('ai_hata_analizi')}")
+
+                if not kayit.get("foto_silindi") and kayit.get("storage_yolu"):
+                    try:
+                        public_url = supabase.storage.from_(BUCKET_ADI).get_public_url(kayit["storage_yolu"])
+                        st.image(public_url, caption=f"{kayit.get('ders')} - {kayit.get('konu')}", use_container_width=True)
+                    except Exception:
+                        st.caption("Görsel bağlantısı şu an görüntülenemedi.")
+                else:
+                    st.caption("🗑️ Deneme oluşturulduğu için fotoğraf Storage'dan silindi; ders ve konu kaydı korundu.")     
 # --- DENEME ANALİZİ VE NET TAKİBİ ---
     with tab5:
         col_veri_giris, col_grafik = st.columns([1, 2])
